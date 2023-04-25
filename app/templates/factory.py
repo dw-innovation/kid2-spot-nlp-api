@@ -23,7 +23,7 @@ class SearchWithinTemplate(Template):
 
         txt = prefix + "(\n"
 
-        first_op = 'node' if len(edges) == 1 else 'way'
+        first_op = 'node' if len(edges) == 1 else 'nwr'
 
         for idx, edge in enumerate(edges):
 

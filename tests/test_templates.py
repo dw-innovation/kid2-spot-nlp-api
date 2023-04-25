@@ -23,7 +23,7 @@ class TestTemplates(unittest.TestCase):
             'action': 'search_within'
         }
 
-        expected_query = "[out:json][timeout:250];\n(\nway[shop=kiosk]({{bbox}})->.one;\nway(around.one:20)[amenity=pharmacy]->.two;\nway(around.two:40)[amenity=hospital][material=wooden]->.three;\n);\nout geom;"
+        expected_query = "[out:json][timeout:250];\n(\nnwr[shop=kiosk]({{bbox}})->.one;\nnwr(around.one:20)[amenity=pharmacy]->.two;\nnwr(around.two:40)[amenity=hospital][material=wooden]->.three;\n);\nout geom;"
         examples.append((generated_json, expected_query))
 
         # search within box
