@@ -24,18 +24,22 @@ class TestTemplates(unittest.TestCase):
         }
 
         expected_query = "(\nway[shop=kiosk]({{bbox}})->.one;\nway(around.one:20)[amenity=pharmacy]->.two;\nway(around.two:40)[amenity=hospital][material=wooden]->.three;\n);\nout geom;"
+        examples.append((generated_json, expected_query))
 
-        #
+        # search within box
+        # nodes of the sentence
+        nodes = [{'name': 'bbox', 'type': 'area'}, {'name': 'kiosk', 'type': 'object', 'props': ['shop=kiosk']}]
 
-        '''
-        // search in …
-        {{geocodeArea:Deutschland}}->.searchArea;
-        // search for …
-        way[man_made=cooling_tower](if:number(t["height"])>=80)(area.searchArea)->.one;
-        way[man_made=tower]["tower:type"="cooling"](if:number(t["height"])>=80)(area.searchArea)->.two;
-        node(around.one:2000)["generator:source"="wind"][!"removed:power"]->.three;
-        node(around.two:2000)["generator:source"="wind"][!"removed:power"]->.four;
-        '''
+        # edges for distance
+        edges = [{'from': '0', 'to': '1', 'weight': 10}]
+
+        generated_json = {
+            'nodes': nodes,
+            'relations': edges,
+            'action': 'search_within'
+        }
+
+        expected_query = "(\nnode[shop=kiosk]({{bbox}})->.one;\n);\nout geom;"
 
         examples.append((generated_json, expected_query))
 
@@ -47,6 +51,13 @@ class TestTemplates(unittest.TestCase):
         for (example, expected_query) in examples:
             template = TEMPLATES[example['action']]
             op_query = template.generate_op_query(example)
+
+            print('Generated Query')
+            print(op_query)
+
+            print('Expected Query')
+            print(expected_query)
+
             assert expected_query == op_query
 
 
