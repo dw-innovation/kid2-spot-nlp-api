@@ -16,7 +16,13 @@ class Template:
 
 class SearchWithinTemplate(Template):
     def template(self, area, nodes, edges):
-        txt = "(\n"
+        if 'bbox' not in area:
+            area = f"geocodeArea:\"{area}\""
+            prefix = f'{{{{{area}}}}}->.searchArea;\n'
+        else:
+            prefix=''
+
+        txt = prefix + "(\n"
 
         first_op = 'node' if len(edges) == 1 else 'way'
 
@@ -28,7 +34,10 @@ class SearchWithinTemplate(Template):
             props_text = ''.join([f'[{prop}]' for prop in nodes[int(loc_to)]['props']])
 
             if loc_from == '0':
-                txt += f'{first_op}{props_text}({area})->.{num2word_engine.number_to_words(loc_to)};\n'
+                if 'bbox' not in area:
+                    txt += f'{first_op}{props_text}(area.searchArea)->.{num2word_engine.number_to_words(loc_to)};\n'
+                else:
+                    txt += f'{first_op}{props_text}({area})->.{num2word_engine.number_to_words(loc_to)};\n'
             else:
                 dist = edge['weight']
                 txt += f'way(around.{num2word_engine.number_to_words(loc_from)}:{dist}){props_text}->.{num2word_engine.number_to_words(loc_to)};\n'
@@ -43,9 +52,8 @@ class SearchWithinTemplate(Template):
             if node['type'] == 'area':
                 area = node['name']
 
-                if area != 'bbox':
-                    area = f'geocodeArea:{area}'
-                area = f'{{{{{area}}}}}'
+                if area == 'bbox':
+                    area = f'{{{{{area}}}}}'
             else:
                 objects.append(node)
 

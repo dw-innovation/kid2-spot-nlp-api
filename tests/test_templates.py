@@ -43,6 +43,25 @@ class TestTemplates(unittest.TestCase):
 
         examples.append((generated_json, expected_query))
 
+        # search within LOCATION
+        # nodes of the sentence
+        nodes = [{'name': 'berlin', 'type': 'area'}, {'name': 'kiosk', 'type': 'object', 'props': ['shop=kiosk']}]
+
+        # edges for distance
+        edges = [{'from': '0', 'to': '1', 'weight': 10}]
+
+        generated_json = {
+            'nodes': nodes,
+            'relations': edges,
+            'action': 'search_within'
+        }
+
+        print(generated_json)
+
+        expected_query = "{{geocodeArea:\"berlin\"}}->.searchArea;\n(\nnode[shop=kiosk](area.searchArea)->.one;\n);\nout geom;"
+
+        examples.append((generated_json, expected_query))
+
         return examples
 
     def test_search_within(self):
