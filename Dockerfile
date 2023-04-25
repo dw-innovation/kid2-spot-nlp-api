@@ -4,7 +4,7 @@ RUN apk update && apk add bash
 
 WORKDIR /app
 
-COPY app /app
+COPY . /app
 
 COPY requirements.txt /app/requirements.txt
 
