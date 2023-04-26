@@ -62,6 +62,47 @@ class SearchWithinTemplate(Template):
         return txt
 
 
+class ConditionalSearchWithin(SearchWithinTemplate):
+    def template(self, area, nodes, edges):
+        prefix = '[out:json][timeout:250];\n'
+        if 'bbox' not in area:
+            area = f"geocodeArea:\"{area}\""
+            prefix += f'{{{{{area}}}}}->.searchArea;\n'
+
+        txt = prefix
+
+        first_op = 'node' if len(edges) == 1 else 'nwr'
+
+        for idx, edge in enumerate(edges):
+
+            loc_from = edge['from']
+            loc_to = edge['to']
+
+            filtered_nodes = filter(lambda prop: 'count' not in prop, nodes[int(loc_to)]['props'])
+            props_text = ''.join([f'[{prop}]' for prop in filtered_nodes])
+
+            if loc_from == '0':
+                if 'bbox' not in area:
+                    txt += f'{first_op}{props_text}(area.searchArea)->.{num2word_engine.number_to_words(loc_to)};\n'
+                else:
+                    txt += f'{first_op}{props_text}({area})->.{num2word_engine.number_to_words(loc_to)};\n'
+            else:
+                dist = edge['weight']
+                txt += f'nwr(around.{num2word_engine.number_to_words(loc_from)}:{dist}){props_text}->.{num2word_engine.number_to_words(loc_to)};\n'
+
+            nodes_with_count = list(filter(lambda prop: 'count' in prop, nodes[int(loc_to)]['props']))
+
+            for node in nodes_with_count:
+                count = node.split(':')
+
+                txt += f"foreach .one(\n  node.one(around:{edge['weight']});\n  node._(if:count(nodes)>={count[-1]});\n"
+
+
+        txt += "out geom;"
+        return txt.strip()
+
+
 TEMPLATES = {
-    'search_within': SearchWithinTemplate()
+    'search_within': SearchWithinTemplate(),
+    'conditional_search_within': ConditionalSearchWithin()
 }

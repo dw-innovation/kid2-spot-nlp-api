@@ -60,6 +60,27 @@ class TestTemplates(unittest.TestCase):
 
         examples.append((generated_json, expected_query))
 
+        # looking for winds that minimum 8 of them within 1 km and they are still operated in Niedersachsen
+        nodes = [{'name': 'niedersachsen', 'type': 'area'}, {'name': 'wind', 'type': 'object',
+                                                            'props': ["\"generator:source\"=\"wind\"",
+                                                                      "!\"removed:power\"", "count:8"]}]
+
+        # edges for distance
+        edges = [{'from': '0', 'to': '1', 'weight': 1000}]
+
+        generated_json = {
+            'nodes': nodes,
+            'relations': edges,
+            'action': 'conditional_search_within'
+        }
+
+        excpected_query = "[out:json][timeout:250];\n{{geocodeArea:\"niedersachsen\"}}->.searchArea;\n" \
+                          "node[\"generator:source\"=\"wind\"][!\"removed:power\"](area.searchArea)->.one;\n" \
+                          "foreach .one(\n" \
+                          "  node.one(around:1000);\n" \
+                          "  node._(if:count(nodes)>=8);\nout geom;"
+
+        examples.append((generated_json, excpected_query))
         return examples
 
     def test_search_within(self):
