@@ -62,8 +62,8 @@ class TestTemplates(unittest.TestCase):
 
         # looking for winds that minimum 8 of them within 1 km and they are still operated in Niedersachsen
         nodes = [{'name': 'niedersachsen', 'type': 'area'}, {'name': 'wind', 'type': 'object',
-                                                            'props': ["\"generator:source\"=\"wind\"",
-                                                                      "!\"removed:power\"", "count:8"]}]
+                                                             'props': ["\"generator:source\"=\"wind\"",
+                                                                       "!\"removed:power\"", "count:8"]}]
 
         # edges for distance
         edges = [{'from': '0', 'to': '1', 'weight': 1000}]
@@ -74,14 +74,41 @@ class TestTemplates(unittest.TestCase):
             'action': 'conditional_search_within'
         }
 
-        excpected_query = "[out:json][timeout:250];\n{{geocodeArea:\"niedersachsen\"}}->.searchArea;\n" \
-                          "node[\"generator:source\"=\"wind\"][!\"removed:power\"](area.searchArea)->.one;\n" \
-                          "foreach .one(\n" \
-                          "  node.one(around:1000);\n" \
-                          "  node._(if:count(nodes)>=8);\nout geom;"
+        expected_query = "[out:json][timeout:250];\n{{geocodeArea:\"niedersachsen\"}}->.searchArea;\n" \
+                         "node[\"generator:source\"=\"wind\"][!\"removed:power\"](area.searchArea)->.one;\n" \
+                         "foreach .one(\n" \
+                         "  node.one(around:1000);\n" \
+                         "  node._(if:count(nodes)>=8);\nout geom;"
 
-        examples.append((generated_json, excpected_query))
+        examples.append((generated_json, expected_query))
+
+        # find a cooling tower with a height larger than 80 meters
+        nodes = [{'name': 'germany', 'type': 'area'},
+                 {'name': 'wind', 'type': 'object',
+                  'props': ['man_made=cooling_tower', "height larger 80"]}]
+
+        edges = [{'from': '0', 'to': '1', 'weight': 1000}]
+
+        generated_json = {
+            'nodes': nodes,
+            'relations': edges,
+            'action': 'comparision_search_within'
+        }
+
+        expected_query = "[out:json][timeout:250];\n{{geocodeArea:\"germany\"}}->.searchArea;\n" \
+                         "(\nnwr[man_made=cooling_tower](if:number(t[\"height\"])>=80)" \
+                         "(area.searchArea)->.one;\n" \
+                         ")\n" \
+                         "->._;\n" \
+                         "out geom;"
+
+        print(generated_json)
+
+
+        examples.append((generated_json, expected_query))
+
         return examples
+
 
     def test_search_within(self):
         examples = self.examples()
