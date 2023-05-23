@@ -30,7 +30,7 @@ class SearchWithinTemplate(Template):
             loc_from = edge['from']
             loc_to = edge['to']
 
-            props_text = ''.join([f'[{prop}]' for prop in nodes[int(loc_to)]['props']])
+            props_text = ''.join([prop for prop in nodes[int(loc_to)]['name']])
 
             if loc_from == '0':
                 if 'bbox' not in area:

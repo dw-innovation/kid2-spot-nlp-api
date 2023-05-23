@@ -1,3 +1,8 @@
 inflect==6.0.4
 uvicorn==0.21.1
 fastapi==0.95.1
+transformers==4.27.2
+peft==0.3.0
+pandas==2.0.1
+gensim==4.3.1
+docarray==0.21.0
