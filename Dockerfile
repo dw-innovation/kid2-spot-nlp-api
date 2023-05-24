@@ -29,4 +29,4 @@ EXPOSE 8080
 
 ENV PYTHONPATH /var/data/models
 
-CMD exec uvicorn app.main:app --port 8080 --host 0.0.0.0
+CMD
