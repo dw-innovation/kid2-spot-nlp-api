@@ -9,11 +9,11 @@ ARG PT_TORCHDATA_URL=https://download.pytorch.org/whl/test/torchdata-0.4.1-cp38-
 FROM ubuntu:20.04
 
 RUN apt-get update \
- && apt-get upgrade -y \
- && apt-get autoremove -y \
- && apt-get clean \
- && apt-get install -y python3-pip \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get upgrade -y \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && apt-get install -y python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip
 
@@ -26,5 +26,7 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install -r requirements.txt
 
 EXPOSE 8080
+
+ENV PYTHONPATH /var/data/models
 
 CMD exec uvicorn app.main:app --port 8080 --host 0.0.0.0
