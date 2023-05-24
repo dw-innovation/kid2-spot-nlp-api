@@ -5,7 +5,6 @@ from app.templates.factory import TEMPLATES
 from typing import Dict, List
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from app.models.op_plus import inference
 
 app = FastAPI()
 
