@@ -1,4 +1,4 @@
-from app.templates.factory import SearchWithinTemplate
+from templates.factory import SearchWithinTemplate
 
 
 TEMPLATES = {

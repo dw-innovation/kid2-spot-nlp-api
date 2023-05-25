@@ -7,8 +7,8 @@ from transformers import (AutoTokenizer, AutoModelForSeq2SeqLM)
 from peft import PeftModel
 import os
 
-peft_model_id = os.getenv("MODELSPATH")+"/t5_tuned"
-base_model = os.getenv("MODELSPATH")+"/t5-base"
+peft_model_id = "model/t5_tuned"
+base_model = "model/t5-base"
 
 # # load base LLM model and tokenizer
 transformer_model = AutoModelForSeq2SeqLM.from_pretrained(base_model)
@@ -18,11 +18,11 @@ device = torch.device('cpu')
 transformer_model = PeftModel.from_pretrained(transformer_model, peft_model_id)
 transformer_model.to(device)
 
-op_tag_model_path = os.getenv("MODELSPATH")+"/wiki.simple.vec"
+op_tag_model_path = "model/wiki.simple.vec"
 op_tag_model = KeyedVectors.load_word2vec_format(op_tag_model_path)
 
 da = DocumentArray(
-    storage='sqlite', config={'connection': os.getenv("MODELSPATH")+'/op_tags.db', 'table_name': 'keys'}
+    storage='sqlite', config={'connection': 'model/op_tags.db', 'table_name': 'keys'}
 )
 
 
