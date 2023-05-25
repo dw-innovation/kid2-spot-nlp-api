@@ -21,10 +21,10 @@ WORKDIR /app
 
 COPY app /app
 
-COPY requirements.txt /app/requirements.txt
+COPY requirements.txt /app
 
-RUN pip install -r requirements.txt
+RUN pip install -r /app/requirements.txt
 
 EXPOSE 8080
 
-CMD exec uvicorn app.main:app --port 8080 --host 0.0.0.0
+CMD exec uvicorn main:app --port 8080 --host 0.0.0.0
