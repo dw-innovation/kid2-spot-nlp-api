@@ -53,6 +53,7 @@ def inference(sentence: str) -> str:
 
     result = json.loads(dirtyjson.loads(result))
 
+
     nodes = []
     for node in result['nodes']:
         if node['type'] == 'object':
@@ -65,7 +66,7 @@ def inference(sentence: str) -> str:
                 wv = np.random(300, 1)
 
             os_tag = da.find(np.array(wv), metric='cosine', limit=1, exclude_self=True)[0]
-
+            
             nodes.append({'name': os_tag.tags['tag'], 'type': node['type'], 'props': node['props']})
 
         else:
