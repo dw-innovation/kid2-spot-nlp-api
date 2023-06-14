@@ -32,6 +32,9 @@ class TestTemplates(unittest.TestCase):
         }
 
         expected_query = "[out:json][timeout:250];\n(\nnwr[shop=kiosk]({{bbox}})->.one;\nnwr(around.one:20)[amenity=pharmacy]->.two;\nnwr(around.two:40)[amenity=hospital][material=wooden]->.three;\n);\nout geom;"
+
+        print(expected_query)
+
         examples.append((generated_json, expected_query))
 
         # search within box
@@ -68,10 +71,11 @@ class TestTemplates(unittest.TestCase):
 
         examples.append((generated_json, expected_query))
 
-        # # looking for winds that minimum 8 of them within 1 km and they are still operated in Niedersachsen
+        # looking for winds that minimum 8 of them within 1 km and they are still operated in Niedersachsen
         # nodes = [{'name': 'niedersachsen', 'type': 'area'}, {'name': 'wind', 'type': 'object',
         #                                                      'props': ["\"generator:source\"=\"wind\"",
         #                                                                "!\"removed:power\"", "count:8"]}]
+        #
         #
         # # edges for distance
         # edges = [{'from': '0', 'to': '1', 'weight': 1000}]
@@ -103,12 +107,12 @@ class TestTemplates(unittest.TestCase):
         #     'action': 'comparision_search_within'
         # }
         #
-        # expected_query = "[out:json][timeout:250];\n{{geocodeArea:\"germany\"}}->.searchArea;\n" \
-        #                  "(\nnwr[man_made=cooling_tower](if:number(t[\"height\"])>=80)" \
-        #                  "(area.searchArea)->.one;\n" \
-        #                  ")\n" \
-        #                  "->._;\n" \
-        #                  "out geom;"
+        expected_query = "[out:json][timeout:250];\n{{geocodeArea:\"germany\"}}->.searchArea;\n" \
+                         "(\nnwr[man_made=cooling_tower](if:number(t[\"height\"])>=80)" \
+                         "(area.searchArea)->.one;\n" \
+                         ")\n" \
+                         "->._;\n" \
+                         "out geom;"
 
         print(generated_json)
 
