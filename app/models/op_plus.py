@@ -53,6 +53,8 @@ def inference(sentence: str) -> str:
 
     result = json.loads(dirtyjson.loads(result))
 
+    print(result)
+
 
     nodes = []
     for node in result['nodes']:
@@ -81,6 +83,8 @@ def inference(sentence: str) -> str:
                       'weight': response_relation['weight']})
 
     action = result['action']
+
+    print(dict(nodes=nodes, relations=edges, action=action))
 
     return dict(nodes=nodes, relations=edges, action=action)
 

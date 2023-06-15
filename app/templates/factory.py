@@ -1,8 +1,5 @@
 from typing import Dict
-import json
 import inflect
-import pprint
-
 num2word_engine = inflect.engine()
 
 # TODO change it in the future
@@ -134,8 +131,6 @@ class ConditionalSearchWithin(SearchWithinTemplate):
         edge_dict = {}
         for idx, edge in enumerate(edges):
             edge_dict[edge['to']] = edge
-
-        print(edge_dict)
 
         for idx, node in enumerate(nodes):
             if node['type'] == 'area':
