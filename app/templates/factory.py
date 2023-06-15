@@ -42,7 +42,8 @@ class SearchWithinTemplate(Template):
 
         txt = prefix + "(\n"
 
-        first_op = 'node' if len(edges) == 1 else 'nwr'
+        # todo change it after change of the data output
+        first_op = 'node' if len(edges) == 1 and edges[0]['weight']==-1 else 'nwr'
 
         # we create an edge dictionary where the key is the row we need to change in the query. Basically, it is 1.
         edge_dict = {}
@@ -94,9 +95,6 @@ class SearchWithinTemplate(Template):
         #         txt += f'nwr(around.{num2word_engine.number_to_words(loc_from)}:{dist}){props_text}->.{num2word_engine.number_to_words(loc_to)};\n'
 
         txt += ");\nout geom;"
-
-        print(txt)
-
         return txt.strip()
 
     def generate_op_query(self, intermediate_query: Dict):
@@ -232,5 +230,5 @@ class ComparisionSearchWithin(SearchWithinTemplate):
 TEMPLATES = {
     0: SearchWithinTemplate(),
     1: ConditionalSearchWithin(),
-    2: ComparisionSearchWithin()
+    2: SearchWithinTemplate()
 }
