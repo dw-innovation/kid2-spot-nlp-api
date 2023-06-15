@@ -88,11 +88,11 @@ print(f'Overpass Query:\n{op_query}')
 # case_intermediate_query = {'nodes': [{'name': 'bbox', 'type': 'area'}, {'name': '[generator:source=wind]', 'type': 'object', 'props': []}, {'name': '[shop=supermarket]', 'type': 'object', 'props': [{'name': 'Ru'}]}], 'relations': [{'from': -1, 'to': -1, 'weight': 1644}], 'action': 2}
 #
 #
-# case_sentence = 'Find me a wind turbine that is at least 83 meters tall and a restaurant that is located within a 1313 meter radius of the turbine.'
-#
-# case_intermediate_query = {'nodes': [{'name': 'bbox', 'type': 'area'}, {'name': '[generator:source=wind]', 'type': 'object', 'props': [{'height': '83'}]}, {'name': '[amenity=restaurant]', 'type': 'object', 'props': []}], 'relations': [{'from': -1, 'to': -1, 'weight': 1313}], 'action': 2}
-# template = TEMPLATES[case_intermediate_query['action']]
-# op_query = template.generate_op_query(case_intermediate_query)
-#
-# print(f'Sentence:\n{case_sentence}')
-# print(f'Overpass Query:\n{op_query}')
+case_sentence = 'Find me a wind turbine that is at least 83 meters tall and a restaurant that is located within a 1313 meter radius of the turbine.'
+
+case_intermediate_query = {'nodes': [{'name': 'bbox', 'type': 'area'}, {'name': '[generator:source=wind]', 'type': 'object', 'props': [{'height': '83'}]}, {'name': '[amenity=restaurant]', 'type': 'object', 'props': []}], 'relations': [{'from': -1, 'to': -1, 'weight': 1313}], 'action': 2}
+template = TEMPLATES[case_intermediate_query['action']]
+op_query = template.generate_op_query(case_intermediate_query)
+
+print(f'Sentence:\n{case_sentence}')
+print(f'Overpass Query:\n{op_query}')
