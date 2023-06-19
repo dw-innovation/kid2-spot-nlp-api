@@ -1,9 +1,8 @@
-import json
 import torch
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 from app.templates.factory import TEMPLATES
-from typing import Dict, List
-from fastapi import FastAPI, Request
+from typing import List
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.models.op_plus import inference
 
