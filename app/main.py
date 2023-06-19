@@ -1,10 +1,10 @@
 import torch
 from pydantic import BaseModel
-from app.templates.factory import TEMPLATES
+from templates.factory import TEMPLATES
 from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.models.op_plus import inference
+from models.op_plus import inference
 
 app = FastAPI()
 
