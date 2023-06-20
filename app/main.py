@@ -1,9 +1,11 @@
 import json
+import torch
 from pydantic import BaseModel, validator
-from app.templates.factory import TEMPLATES
+from templates.factory import TEMPLATES
 from typing import Dict, List
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from models.op_plus import inference
 
 app = FastAPI()
 
@@ -15,6 +17,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
 
 class Query(BaseModel):
     action: str
@@ -33,5 +36,8 @@ def translate_from_dict_to_op(query: Query):
 
 
 @app.get("/translate_from_nl_to_op", response_model=Response)
-def translate_from_dict_to_op(query: Dict):
-    raise NotImplementedError("We haven't implemented it yet!")
+@torch.inference_mode()
+def translate_from_dict_to_op(sentence: str):
+    output = inference(sentence)
+    template = TEMPLATES[output['action']]
+    return dict(op_query=template.generate_op_query(output))
