@@ -1,5 +1,5 @@
 import unittest
-from app.templates.factory import TEMPLATES
+from templates.factory import TEMPLATES
 
 
 class TestTemplates(unittest.TestCase):
@@ -24,7 +24,6 @@ class TestTemplates(unittest.TestCase):
         edges = [{'from': '0', 'to': '1', 'weight': 10}, {
             'from': '1', 'to': '2', 'weight': 20}]
 
-
         generated_json = {
             'nodes': nodes,
             'relations': edges,
@@ -39,7 +38,8 @@ class TestTemplates(unittest.TestCase):
 
         # search within box
         # nodes of the sentence
-        nodes = [{'name': 'bbox', 'type': 'area'}, {'name': '[shop=kiosk]', 'type': 'object'}]
+        nodes = [{'name': 'bbox', 'type': 'area'}, {
+            'name': '[shop=kiosk]', 'type': 'object'}]
 
         # edges for distance
         edges = [{'from': '0', 'to': '1', 'weight': 10}]
@@ -56,7 +56,8 @@ class TestTemplates(unittest.TestCase):
 
         # search within LOCATION
         # nodes of the sentence
-        nodes = [{'name': 'berlin', 'type': 'area'}, {'name': '[shop=kiosk]', 'type': 'object'}]
+        nodes = [{'name': 'berlin', 'type': 'area'}, {
+            'name': '[shop=kiosk]', 'type': 'object'}]
 
         # edges for distance
         edges = [{'from': '0', 'to': '1', 'weight': 10}]
@@ -116,11 +117,9 @@ class TestTemplates(unittest.TestCase):
 
         print(generated_json)
 
-
         examples.append((generated_json, expected_query))
 
         return examples
-
 
     def test_search_within(self):
         examples = self.examples()
