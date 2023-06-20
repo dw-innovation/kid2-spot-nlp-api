@@ -1,7 +1,7 @@
 import json
 import torch
 from pydantic import BaseModel, validator
-from templates.factory import TEMPLATES
+from app.templates.factory import TEMPLATES
 from typing import Dict, List
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
