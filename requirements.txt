@@ -4,6 +4,5 @@ fastapi==0.95.1
 transformers==4.27.2
 peft==0.3.0
 pandas==2.0.1
-gensim==4.3.1
-docarray==0.21.0
 dirtyjson==1.0.8
+diskcache==5.6.1

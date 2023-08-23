@@ -1,15 +1,15 @@
 import torch
-import numpy as np
-from docarray import Document, DocumentArray
-from gensim.models import KeyedVectors
+import requests
+from diskcache import Cache
 import json
 import dirtyjson
+import os
 
 from transformers import (AutoTokenizer, AutoModelForSeq2SeqLM)
 from peft import PeftModel
 
-peft_model_id = "model/t5_tuned"
-base_model = "model/t5-base"
+peft_model_id = os.getenv("PEFT_MODEL_ID")
+base_model = os.getenv("BASE_MODEL")
 
 # # load base LLM model and tokenizer
 transformer_model = AutoModelForSeq2SeqLM.from_pretrained(base_model)
@@ -19,17 +19,20 @@ device = torch.device('cpu')
 transformer_model = PeftModel.from_pretrained(transformer_model, peft_model_id)
 transformer_model.to(device)
 
-op_tag_model_path = "model/wiki.simple.vec"
-op_tag_model = KeyedVectors.load_word2vec_format(op_tag_model_path)
-
-da = DocumentArray(
-    storage='sqlite', config={'connection': 'model/op_tags.db', 'table_name': 'keys'}
-)
-
 
 def prepare_input(sentence: str):
-    input_ids = tokenizer(sentence, max_length=512, return_tensors="pt").input_ids
+    input_ids = tokenizer(sentence, max_length=1024, return_tensors="pt").input_ids
     return input_ids
+
+
+cache = Cache('tmp')
+SEARCH_ENDPOINT = os.getenv("SEARCH_ENDPOINT")
+
+@cache.memoize()
+def search_osm_tag(entity):
+    PARAMS = {'word': entity, "limit":1, "detail": False}
+    r = requests.get(url=SEARCH_ENDPOINT, params=PARAMS)
+    return r.json()
 
 
 def inference(sentence: str) -> str:
@@ -38,55 +41,47 @@ def inference(sentence: str) -> str:
     outputs = transformer_model.generate(inputs=input_data, max_length=1024)
     result = tokenizer.decode(token_ids=outputs[0], skip_special_tokens=True)
 
-    # Remove extra characters
     result = result.strip().strip("{").strip("}")
     result = result.replace("'", "\"")
     result = result.replace("'", "\"")
     result = result.replace("\"{ ", "\'{ ")
     result = result.replace("} \"", "} \'")
     result = result.replace("\"\"", "\"")
-
-    # Remove trailing whitespace
-    result = result.strip()
-
-    # Load JSON data as a Python object
-
+    result = result.replace(", \"", ", \"")
+    result = result.replace('} ', "}")
+    result = result.replace('} ]', "}]")
+    result = result.replace(': [', ":[")
+    result = result.replace('}}]', '}]')
     result = json.loads(dirtyjson.loads(result))
 
-    print(result)
+    area = result['a']
+    if "v" not in area:
+        result['a']['v'] = ""
 
+    nodes = result['ns']
 
-    nodes = []
-    for node in result['nodes']:
-        if node['type'] == 'object':
-            splits = node['label'].split()
-            word = splits[0] if len(splits) >= 2 else node['label']
+    for idx, node in enumerate(nodes):
+        node["t"] = "nwr"
+        result['ns'][idx] = node
 
-            try:
-                wv = op_tag_model[word]
-            except KeyError:
-                wv = np.random(300, 1)
+        if "flts" not in node:
+            node["flts"] = []
 
-            os_tag = da.find(np.array(wv), metric='cosine', limit=1, exclude_self=True)[0]
-            
-            nodes.append({'name': os_tag.tags['tag'], 'type': node['type'], 'props': node['props']})
+        result = search_osm_tag(node["n"])
+        osm_tag = result[0]["osm_tag"].split("=")
 
-        else:
-            nodes.append({'name': node['label'], 'type': node['type']})
+        node["flts"] = [{"k": osm_tag[0], "v": osm_tag[1], "op": "=", "n": node["n"]}] + node["flts"]
 
-    response_relations = result['edges']
+        for idx, flt in enumerate(node["flts"][1:]):
+            flt["k"] = flt["n"]
 
-    edges = []
-    for response_relation in response_relations:
-        edges.append({'from': response_relation['from'],
-                      'to': response_relation['to'],
-                      'weight': response_relation['weight']})
+            node["flts"][idx + 1] = flt
 
-    action = result['action']
+        nodes[idx] = node
 
-    print(dict(nodes=nodes, relations=edges, action=action))
+    result['ns'] = node
 
-    return dict(nodes=nodes, relations=edges, action=action)
+    return result
 
 
 if __name__ == '__main__':
