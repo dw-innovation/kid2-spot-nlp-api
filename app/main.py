@@ -39,5 +39,4 @@ def translate_from_dict_to_op(query: Query):
 @torch.inference_mode()
 def translate_from_dict_to_op(sentence: str):
     output = inference(sentence)
-    template = TEMPLATES[output['action']]
-    return dict(op_query=template.generate_op_query(output))
+    return dict(op_query=output)
