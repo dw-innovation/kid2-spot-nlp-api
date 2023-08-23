@@ -1,7 +1,5 @@
-import json
 import torch
 from pydantic import BaseModel, validator
-from templates.factory import TEMPLATES
 from typing import Dict, List
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,7 +24,7 @@ class Query(BaseModel):
 
 
 class Response(BaseModel):
-    op_query: str
+    op_query: Dict
 
 
 @app.post("/translate_from_dict_to_op", response_model=Response)

@@ -28,9 +28,10 @@ def prepare_input(sentence: str):
 cache = Cache('tmp')
 SEARCH_ENDPOINT = os.getenv("SEARCH_ENDPOINT")
 
+
 @cache.memoize()
 def search_osm_tag(entity):
-    PARAMS = {'word': entity, "limit":1, "detail": False}
+    PARAMS = {'word': entity, "limit": 1, "detail": False}
     r = requests.get(url=SEARCH_ENDPOINT, params=PARAMS)
     return r.json()
 
@@ -62,24 +63,23 @@ def inference(sentence: str) -> str:
 
     for idx, node in enumerate(nodes):
         node["t"] = "nwr"
-        result['ns'][idx] = node
 
         if "flts" not in node:
             node["flts"] = []
 
-        result = search_osm_tag(node["n"])
-        osm_tag = result[0]["osm_tag"].split("=")
+        osm_result = search_osm_tag(node["n"])
+        osm_tag = osm_result[0]["osm_tag"].split("=")
 
         node["flts"] = [{"k": osm_tag[0], "v": osm_tag[1], "op": "=", "n": node["n"]}] + node["flts"]
 
-        for idx, flt in enumerate(node["flts"][1:]):
+        for idy, flt in enumerate(node["flts"][1:]):
             flt["k"] = flt["n"]
 
-            node["flts"][idx + 1] = flt
+            node["flts"][idy + 1] = flt
 
         nodes[idx] = node
 
-    result['ns'] = node
+    result['ns'] = nodes
 
     return result
 
