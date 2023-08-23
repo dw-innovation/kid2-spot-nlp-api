@@ -15,7 +15,7 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 
@@ -37,6 +37,6 @@ def translate_from_dict_to_op(query: Query):
 
 @app.get("/translate_from_nl_to_op", response_model=Response)
 @torch.inference_mode()
-def translate_from_dict_to_op(sentence: str):
+def translate_from_nl_to_op(sentence: str):
     output = inference(sentence)
     return dict(op_query=output)
