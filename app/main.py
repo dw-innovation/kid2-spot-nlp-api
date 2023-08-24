@@ -27,10 +27,10 @@ class Response(BaseModel):
     op_query: Dict
 
 
-@app.post("/translate_from_dict_to_op", response_model=Response)
-def translate_from_dict_to_op(query: Query):
-    query = query.dict()
-    return dict(op_query=TEMPLATES[query["action"]].generate_op_query(query))
+# @app.post("/translate_from_dict_to_op", response_model=Response)
+# def translate_from_dict_to_op(query: Query):
+#     query = query.dict()
+#     return dict(op_query=TEMPLATES[query["action"]].generate_op_query(query))
 
 
 @app.get("/translate_from_nl_to_op", response_model=Response)
