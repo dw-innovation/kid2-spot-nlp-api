@@ -33,7 +33,7 @@ class Response(BaseModel):
 #     return dict(op_query=TEMPLATES[query["action"]].generate_op_query(query))
 
 
-@app.get("/translate_from_nl_to_op", response_model=Response)
+@app.post("/translate_from_nl_to_op", response_model=Response)
 @torch.inference_mode()
 def translate_from_nl_to_op(sentence: str):
     output = inference(sentence)
