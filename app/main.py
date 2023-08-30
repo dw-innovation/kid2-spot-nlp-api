@@ -27,6 +27,10 @@ class Response(BaseModel):
     op_query: Dict
 
 
+class SentenceModel(BaseModel):
+    sentence: str
+
+
 # @app.post("/translate_from_dict_to_op", response_model=Response)
 # def translate_from_dict_to_op(query: Query):
 #     query = query.dict()
@@ -35,6 +39,6 @@ class Response(BaseModel):
 
 @app.post("/translate_from_nl_to_op", response_model=Response)
 @torch.inference_mode()
-def translate_from_nl_to_op(sentence: str):
-    output = inference(sentence)
+def translate_from_nl_to_op(body: SentenceModel):
+    output = inference(body.sentence)
     return dict(op_query=output)
