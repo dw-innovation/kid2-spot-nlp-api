@@ -11,22 +11,16 @@ from peft import PeftModel
 peft_model_id = os.getenv("PEFT_MODEL_ID")
 base_model = os.getenv("BASE_MODEL")
 
-# # load base LLM model and tokenizer
+## load base LLM model and tokenizer
 transformer_model = AutoModelForSeq2SeqLM.from_pretrained(base_model)
 tokenizer = AutoTokenizer.from_pretrained(peft_model_id)
 device = torch.device("cpu")
 
-transformer_model = PeftModel.from_pretrained(transformer_model, peft_model_id)
-transformer_model.to(device)
-
-
-def prepare_input(sentence: str):
-    input_ids = tokenizer(sentence, max_length=1024, return_tensors="pt").input_ids
-    return input_ids
-
-
 cache = Cache("tmp")
 SEARCH_ENDPOINT = os.getenv("SEARCH_ENDPOINT")
+
+transformer_model = PeftModel.from_pretrained(transformer_model, peft_model_id)
+transformer_model.to(device)
 
 
 @cache.memoize()
@@ -36,31 +30,18 @@ def search_osm_tag(entity):
     return r.json()
 
 
-def inference(sentence: str) -> str:
-    input_data = prepare_input(sentence=sentence)
-    input_data = input_data.to(transformer_model.device)
-    outputs = transformer_model.generate(inputs=input_data, max_length=1024)
-    result = tokenizer.decode(token_ids=outputs[0], skip_special_tokens=True)
+def prepare_input(sentence: str):
+    input_ids = tokenizer(sentence, max_length=1024, return_tensors="pt").input_ids
+    return input_ids
 
-    result = result.strip().strip("{").strip("}")
-    result = result.replace("'", '"')
-    result = result.replace("'", '"')
-    result = result.replace('"{ ', "'{ ")
-    result = result.replace('} "', "} '")
-    result = result.replace('""', '"')
-    result = result.replace(', "', ', "')
-    result = result.replace("} ", "}")
-    result = result.replace("} ]", "}]")
-    result = result.replace(": [", ":[")
-    result = result.replace("}}]", "}]")
-    result = json.loads(dirtyjson.loads(result))
 
-    area = result["a"]
+def process_area(area: dict) -> dict:
     if "v" not in area:
-        result["a"]["v"] = ""
+        area["v"] = ""
+    return area
 
-    nodes = result["ns"]
 
+def process_nodes(nodes: list) -> list:
     for idx, node in enumerate(nodes):
         node["t"] = "nwr"
 
@@ -69,19 +50,47 @@ def inference(sentence: str) -> str:
 
         osm_result = search_osm_tag(node["n"])
         osm_tag = osm_result[0]["osm_tag"].split("=")
-
         node["flts"] = [
             {"k": osm_tag[0], "v": osm_tag[1], "op": "=", "n": node["n"]}
         ] + node["flts"]
 
         for idy, flt in enumerate(node["flts"][1:]):
             flt["k"] = flt["n"]
-
             node["flts"][idy + 1] = flt
 
         nodes[idx] = node
+    return nodes
 
-    result["ns"] = nodes
+
+def clean_result(result: str) -> str:
+    result = result.strip().strip("{").strip("}")
+    result = (
+        result.replace("'", '"')
+        .replace("'", '"')
+        .replace('"{ ', "'{ ")
+        .replace('} "', "} '")
+        .replace('""', '"')
+        .replace(', "', ', "')
+        .replace("} ", "}")
+        .replace("} ]", "}]")
+        .replace(": [", ":[")
+        .replace("}}]", "}]")
+    )
+
+    return result
+
+
+def inference(sentence: str) -> str:
+    input_data = prepare_input(sentence=sentence)
+    input_data = input_data.to(transformer_model.device)
+    outputs = transformer_model.generate(inputs=input_data, max_length=1024)
+    result = tokenizer.decode(token_ids=outputs[0], skip_special_tokens=True)
+
+    result = clean_result(result)
+    result = json.loads(dirtyjson.loads(result))
+
+    result["a"] = process_area(result["a"])
+    result["ns"] = process_nodes(result["ns"])
 
     return result
 
