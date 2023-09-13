@@ -5,7 +5,7 @@ import json
 import dirtyjson
 import os
 
-from transformers import (AutoTokenizer, AutoModelForSeq2SeqLM)
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from peft import PeftModel
 
 peft_model_id = os.getenv("PEFT_MODEL_ID")
@@ -14,7 +14,7 @@ base_model = os.getenv("BASE_MODEL")
 # # load base LLM model and tokenizer
 transformer_model = AutoModelForSeq2SeqLM.from_pretrained(base_model)
 tokenizer = AutoTokenizer.from_pretrained(peft_model_id)
-device = torch.device('cpu')
+device = torch.device("cpu")
 
 transformer_model = PeftModel.from_pretrained(transformer_model, peft_model_id)
 transformer_model.to(device)
@@ -25,14 +25,14 @@ def prepare_input(sentence: str):
     return input_ids
 
 
-cache = Cache('tmp')
+cache = Cache("tmp")
 SEARCH_ENDPOINT = os.getenv("SEARCH_ENDPOINT")
 
 
 @cache.memoize()
 def search_osm_tag(entity):
-    PARAMS = {'word': entity, "limit": 1, "detail": False}
-    r = requests.get(url=SEARCH_ENDPOINT, params=PARAMS)
+    PARAMS = {"word": entity, "limit": 1, "detail": False}
+    r = requests.get(url=SEARCH_ENDPOINT, params=PARAMS, verify=False)
     return r.json()
 
 
@@ -43,23 +43,23 @@ def inference(sentence: str) -> str:
     result = tokenizer.decode(token_ids=outputs[0], skip_special_tokens=True)
 
     result = result.strip().strip("{").strip("}")
-    result = result.replace("'", "\"")
-    result = result.replace("'", "\"")
-    result = result.replace("\"{ ", "\'{ ")
-    result = result.replace("} \"", "} \'")
-    result = result.replace("\"\"", "\"")
-    result = result.replace(", \"", ", \"")
-    result = result.replace('} ', "}")
-    result = result.replace('} ]', "}]")
-    result = result.replace(': [', ":[")
-    result = result.replace('}}]', '}]')
+    result = result.replace("'", '"')
+    result = result.replace("'", '"')
+    result = result.replace('"{ ', "'{ ")
+    result = result.replace('} "', "} '")
+    result = result.replace('""', '"')
+    result = result.replace(', "', ', "')
+    result = result.replace("} ", "}")
+    result = result.replace("} ]", "}]")
+    result = result.replace(": [", ":[")
+    result = result.replace("}}]", "}]")
     result = json.loads(dirtyjson.loads(result))
 
-    area = result['a']
+    area = result["a"]
     if "v" not in area:
-        result['a']['v'] = ""
+        result["a"]["v"] = ""
 
-    nodes = result['ns']
+    nodes = result["ns"]
 
     for idx, node in enumerate(nodes):
         node["t"] = "nwr"
@@ -70,7 +70,9 @@ def inference(sentence: str) -> str:
         osm_result = search_osm_tag(node["n"])
         osm_tag = osm_result[0]["osm_tag"].split("=")
 
-        node["flts"] = [{"k": osm_tag[0], "v": osm_tag[1], "op": "=", "n": node["n"]}] + node["flts"]
+        node["flts"] = [
+            {"k": osm_tag[0], "v": osm_tag[1], "op": "=", "n": node["n"]}
+        ] + node["flts"]
 
         for idy, flt in enumerate(node["flts"][1:]):
             flt["k"] = flt["n"]
@@ -79,12 +81,13 @@ def inference(sentence: str) -> str:
 
         nodes[idx] = node
 
-    result['ns'] = nodes
+    result["ns"] = nodes
 
     return result
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     with torch.inference_mode():
         output = inference(
-            sentence='Find all wind turbines that have a height of 1201 meters or less, all pharmacies, all bars with the name Smith Lane and have more than 1098 levels, and all supermarkets with a building that has less than 1208 levels.')
+            sentence="Find all wind turbines that have a height of 1201 meters or less, all pharmacies, all bars with the name Smith Lane and have more than 1098 levels, and all supermarkets with a building that has less than 1208 levels."
+        )
