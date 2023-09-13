@@ -1,9 +1,12 @@
+from fastapi.responses import JSONResponse
 import torch
-from pydantic import BaseModel, validator
-from typing import Dict, List
-from fastapi import FastAPI, Request
+from pydantic import BaseModel
+from typing import Dict
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from models.op_plus import inference
+from models.spot import inference
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 app = FastAPI()
 
@@ -17,28 +20,45 @@ app.add_middleware(
 )
 
 
-class Query(BaseModel):
-    action: str
-    nodes: List
-    relations: List
-
-
 class Response(BaseModel):
-    op_query: Dict
+    imr: Dict
+    status: str
+
+
+class HTTPErrorResponse(BaseModel):
+    message: str
+    status: str
 
 
 class SentenceModel(BaseModel):
     sentence: str
 
 
-# @app.post("/translate_from_dict_to_op", response_model=Response)
-# def translate_from_dict_to_op(query: Query):
-#     query = query.dict()
-#     return dict(op_query=TEMPLATES[query["action"]].generate_op_query(query))
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    response_model = HTTPErrorResponse(status="error", message=exc.detail)
+    json_compatible_item_data = jsonable_encoder(response_model)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=json_compatible_item_data,
+    )
 
 
-@app.post("/translate_from_nl_to_op", response_model=Response)
+@app.post(
+    "/transform-sentence-to-imr",
+    response_model=Response,
+    status_code=status.HTTP_200_OK,
+)
 @torch.inference_mode()
-def translate_from_nl_to_op(body: SentenceModel):
-    output = inference(body.sentence)
-    return dict(op_query=output)
+def transform_sentence_to_imr(body: SentenceModel):
+    try:
+        output = inference(body.sentence)
+        if not output:
+            raise HTTPException(
+                status_code=status.HTTP_204_NO_CONTENT, detail="No output generated"
+            )
+        return JSONResponse(content={"imr": output, "status": "success"})
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
