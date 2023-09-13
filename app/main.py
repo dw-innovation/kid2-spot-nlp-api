@@ -57,7 +57,13 @@ def transform_sentence_to_imr(body: SentenceModel):
             raise HTTPException(
                 status_code=status.HTTP_204_NO_CONTENT, detail="No output generated"
             )
-        return JSONResponse(content={"imr": output, "status": "success"})
+        return JSONResponse(
+            content={
+                "imr": output["result"],
+                "rawOutput": output["raw"],
+                "status": "success",
+            }
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
