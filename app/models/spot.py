@@ -49,33 +49,38 @@ def process_area(area: dict) -> dict:
 
 # Process the 'nodes' part of the result
 def process_nodes(nodes: list) -> list:
-    # Loop through each node in the list
+    # Iterate through each node in the list
     for idx, node in enumerate(nodes):
-        # Set the type of the node to "nwr"
+        # Set node type to "nwr"
         node["t"] = "nwr"
 
-        # Initialize "flts" key if not present in node
+        # Initialize "flts" key if not present
         if "flts" not in node:
             node["flts"] = []
 
-        # Search for an OSM tag based on the node's name
-        osm_result = search_osm_tag(node["n"])
-        # Parse the first OSM tag from the search result
-        osm_tag = osm_result[0]["osm_tag"].split("=")
+        # Initialize entityflts dictionary with "or" key
+        entityflts = {"or": []}
 
-        # Update the "flts" key with the new OSM tag
-        node["flts"] = [
-            {"k": osm_tag[0], "v": osm_tag[1], "op": "=", "n": node["n"]}
-        ] + node["flts"]
+        # Search OpenStreetMap tags based on the node name
+        osm_results = search_osm_tag(node["n"])
 
-        # Loop through the rest of the "flts" to update them
-        for idy, flt in enumerate(node["flts"][1:]):
-            # Set "k" value based on node's name
-            flt["k"] = flt["n"]
-            # Update the node's filters
-            node["flts"][idy + 1] = flt
+        # Loop through all tags and split them into key and value
+        for tag in osm_results:
+            osm_result = tag["osm_tag"].split("=")
+            # Append the split results to "or" list in entityflts
+            entityflts["or"].append({"k": osm_result[0], "op": "=", "v": osm_result[1]})
 
-        # Update the original list with the modified node
+        # Determine how to set 'filters' based on whether node["flts"] is empty or not
+        if node["flts"] == []:
+            # If empty, set filters to entityflts
+            filters = entityflts
+        else:
+            # Otherwise, append entityflts to existing node["flts"] under "and" key
+            filters = {"and": node["flts"] + [entityflts]}
+
+        # Update the "flts" field in the node with the new filters
+        node["flts"] = filters
+        # Update the node in the original list
         nodes[idx] = node
 
     return nodes
@@ -106,16 +111,16 @@ def inference(sentence: str) -> str:
     input_data = prepare_input(sentence=sentence)
     input_data = input_data.to(transformer_model.device)
     outputs = transformer_model.generate(inputs=input_data, max_length=1024)
-    result = tokenizer.decode(token_ids=outputs[0], skip_special_tokens=True)
+    raw_result = tokenizer.decode(token_ids=outputs[0], skip_special_tokens=True)
 
     # Post-process the results
-    result = clean_result(result)
+    result = clean_result(raw_result)
     result = json.loads(dirtyjson.loads(result))
 
     result["a"] = process_area(result["a"])
     result["ns"] = process_nodes(result["ns"])
 
-    return result
+    return {"result": result, "raw": raw_result}
 
 
 # Entry point for script execution
