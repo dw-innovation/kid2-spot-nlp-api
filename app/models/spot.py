@@ -76,7 +76,7 @@ def process_nodes(nodes: list) -> list:
             filters = entityflts
         else:
             # Otherwise, append entityflts to existing node["flts"] under "and" key
-            filters = {"and": node["flts"] + [entityflts]}
+            filters = [{"and": node["flts"] + [entityflts]}]
 
         # Update the "flts" field in the node with the new filters
         node["flts"] = filters
