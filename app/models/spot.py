@@ -27,7 +27,7 @@ transformer_model.to(device)
 # Cache and fetch OpenStreetMap tags
 @cache.memoize()
 def search_osm_tag(entity):
-    PARAMS = {"word": entity, "limit": 1, "detail": False}
+    PARAMS = {"word": entity, "limit": 5, "detail": False}
     r = requests.get(
         url=SEARCH_ENDPOINT, params=PARAMS, verify=False
     )  # set verify to False to ignore SSL certificate
