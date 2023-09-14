@@ -59,6 +59,7 @@ def transform_sentence_to_imr(body: SentenceModel):
             )
         return JSONResponse(
             content={
+                "inputSentence": body.sentence,
                 "imr": output["result"],
                 "rawOutput": output["raw"],
                 "status": "success",
