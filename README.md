@@ -1,7 +1,8 @@
 # Spot NLP API
 ## Introduction
 
-Spot NLP API is a service that transforms natural language queries into Intermediate Machine-Readable (IMR) format. It employs state-of-the-art transformer models along with other utilities to accomplish this task. This API also enhances its output by consulting an OSM (OpenStreetMap) tagging service.
+Spot NLP API is a service that transforms natural language queries into Intermediate Machine-Readable (IMR) format. It employs state-of-the-art transformer models along with other utilities to accomplish this task. This API also enhances its output by consulting an OSM (OpenStreetMap) tagging service. Results get stored to a MongoDB instance.
+
 Requirements:
 - Docker
 - Model files
@@ -52,3 +53,7 @@ The API requires the following environment variables to be set in a .env file:
 - `PEFT_MODEL_ID`: Identifier for the PEFT model.
 - `BASE_MODEL`: Base model for the transformer.
 - `SEARCH_ENDPOINT`: The endpoint URL for OSM tag searching.
+- `MONGO_URI`: MongoDB URI.
+- `MONGO_DB_NAME`: MongoDB Database name.
+- `MONGO_COLLECTION_NAME`: MongoDB Collection name.
+- `MODEL_VERSION`: Model version in use.
