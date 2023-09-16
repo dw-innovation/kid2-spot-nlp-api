@@ -64,6 +64,9 @@ def process_nodes(nodes: list) -> list:
         # Search OpenStreetMap tags based on the node name
         osm_results = search_osm_tag(node["n"])
 
+        if len(osm_results) == 0:
+            raise Exception("NoOSMTagsFound")
+
         # Loop through all tags and split them into key and value
         for tag in osm_results:
             osm_result = tag["osm_tag"].split("=")
