@@ -43,7 +43,7 @@ def prepare_input(sentence: str):
 # Process the 'area' part of the result
 def process_area(area: dict) -> dict:
     if "v" not in area:
-        area["v"] = ""
+        area["v"] = [-90, -180, 90, 180]
     return area
 
 
