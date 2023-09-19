@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from models.spot import inference
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from datetime import datetime
 
 from pymongo import MongoClient
 import os
@@ -60,6 +61,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 @torch.inference_mode()
 def transform_sentence_to_imr(body: SentenceModel):
     try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         output = inference(body.sentence)
         if not output:
             raise HTTPException(
@@ -68,6 +70,7 @@ def transform_sentence_to_imr(body: SentenceModel):
 
         # Store data in MongoDB
         result_data = {
+            "timestamp": timestamp,
             "inputSentence": body.sentence,
             "imr": output["result"],
             "rawOutput": output["raw"],
@@ -81,7 +84,9 @@ def transform_sentence_to_imr(body: SentenceModel):
 
         return JSONResponse(content=result_data)
     except Exception as e:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         error_data = {
+            "timestamp": timestamp,
             "inputSentence": body.sentence if body else "N/A",
             "error": str(e),
             "status": "error",
