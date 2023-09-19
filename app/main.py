@@ -8,7 +8,6 @@ from models.spot import inference
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
-
 from pymongo import MongoClient
 import os
 
