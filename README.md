@@ -17,6 +17,8 @@ Build the Docker image with:
 docker build -t kid2spotnlpapi:latest .
 ```
 
+Note: You might run into disk space issues after rebuilding the container a couple of times since each individual image is about 7GB in size. You can remove unused images by running `docker image prune -a` 
+
 ## How to Run
 Download the models and unzip them into the model folder. Run the following command:
 
