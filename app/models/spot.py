@@ -44,7 +44,22 @@ def prepare_input(sentence: str):
 def process_area(area: dict) -> dict:
     if "v" not in area:
         area["v"] = [-90, -180, 90, 180]
+    area["value"] = area.pop("v")
+    area["type"] = area.pop("t")
+
     return area
+
+
+# Process 'edges', change the minimized results
+def process_edges(edges: list) -> list:
+    for idx, edge in enumerate(edges):
+        edge["type"] = edge.pop("t")
+        edge["source"] = edge.pop("src")
+        edge["target"] = edge.pop("tgt")
+        edge["distance"] = edge.pop("dist")
+        edges[idx] = edge
+
+    return edges
 
 
 # Process the 'nodes' part of the result
@@ -52,40 +67,46 @@ def process_nodes(nodes: list) -> list:
     # Iterate through each node in the list
     for idx, node in enumerate(nodes):
         # Set node type to "nwr"
-        node["t"] = "nwr"
+        node["type"] = "nwr"
 
         # Initialize "flts" key if not present
         if "flts" not in node:
             node["flts"] = []
 
-        # Initialize entityflts dictionary with "or" key
-        entityflts = {"or": []}
+        node["filters"] = node.pop("flts")
+
+        node["name"] = node.pop("n")
+
+        # # Initialize entityflts dictionary with "or" key
+        # entityflts = {"or": []}
 
         # Search OpenStreetMap tags based on the node name
-        osm_results = search_osm_tag(node["n"])
+        osm_results = search_osm_tag(node["name"])
 
         if len(osm_results) == 0:
             raise Exception("NoOSMTagsFound")
 
-        # Loop through all tags and split them into key and value
-        for tag in osm_results:
-            osm_result = tag["osm_tag"].split("=")
-            # Append the split results to "or" list in entityflts
-            entityflts["or"].append({"k": osm_result[0], "op": "=", "v": osm_result[1]})
+        # # Loop through all tags and split them into key and value
+        # for tag in osm_results:
+        #     print(tag)
+        #     osm_result = tag["osm_tag"].split("=")
+        #     # Append the split results to "or" list in entityflts
+        #     entityflts["or"].append({"k": osm_result[0], "op": "=", "v": osm_result[1]})
+
+        entityflts = {"or": osm_results[0]["imr"]}
 
         # Determine how to set 'filters' based on whether node["flts"] is empty or not
-        if node["flts"] == []:
+        if node["filters"] == []:
             # If empty, set filters to entityflts
             filters = [entityflts]
         else:
             # Otherwise, append entityflts to existing node["flts"] under "and" key
-            filters = [{"and": node["flts"] + [entityflts]}]
+            filters = [{"and": node["filters"] + [entityflts]}]
 
         # Update the "flts" field in the node with the new filters
-        node["flts"] = filters
+        node["filters"] = filters
         # Update the node in the original list
         nodes[idx] = node
-
     return nodes
 
 
@@ -120,8 +141,13 @@ def inference(sentence: str) -> str:
     result = clean_result(raw_result)
     result = json.loads(dirtyjson.loads(result))
 
-    result["a"] = process_area(result["a"])
-    result["ns"] = process_nodes(result["ns"])
+    result["area"] = process_area(result["a"])
+    result["nodes"] = process_nodes(result["ns"])
+    result["edges"] = process_edges(result["es"])
+
+    del result["a"]
+    del result["ns"]
+    del result["es"]
 
     return {"result": result, "raw": raw_result}
 
