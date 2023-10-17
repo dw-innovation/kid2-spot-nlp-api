@@ -4,9 +4,11 @@ from diskcache import Cache
 import json
 import dirtyjson
 import os
-
+from loguru import logger
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from peft import PeftModel
+
+logger.add(f"{__name__}.log", rotation="500 MB")
 
 peft_model_id = os.getenv("PEFT_MODEL_ID")
 base_model = os.getenv("BASE_MODEL")
@@ -84,7 +86,14 @@ def process_nodes(nodes: list) -> list:
         osm_results = search_osm_tag(node["name"])
 
         if len(osm_results) == 0:
-            raise Exception("NoOSMTagsFound")
+            logger.error(f"No OSM Tags found {node['name']}")
+            continue
+        # # Loop through all tags and split them into key and value
+        # for tag in osm_results:
+        #     print(tag)
+        #     osm_result = tag["osm_tag"].split("=")
+        #     # Append the split results to "or" list in entityflts
+        #     entityflts["or"].append({"k": osm_result[0], "op": "=", "v": osm_result[1]})
 
         # # Loop through all tags and split them into key and value
         # for tag in osm_results:
