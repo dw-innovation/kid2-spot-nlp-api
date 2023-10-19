@@ -79,38 +79,23 @@ def process_nodes(nodes: list) -> list:
 
         node["name"] = node.pop("n")
 
-        # # Initialize entityflts dictionary with "or" key
-        # entityflts = {"or": []}
-
         # Search OpenStreetMap tags based on the node name
         osm_results = search_osm_tag(node["name"])
 
         if len(osm_results) == 0:
             logger.error(f"No OSM Tags found {node['name']}")
             continue
-        # # Loop through all tags and split them into key and value
-        # for tag in osm_results:
-        #     print(tag)
-        #     osm_result = tag["osm_tag"].split("=")
-        #     # Append the split results to "or" list in entityflts
-        #     entityflts["or"].append({"k": osm_result[0], "op": "=", "v": osm_result[1]})
 
-        # # Loop through all tags and split them into key and value
-        # for tag in osm_results:
-        #     print(tag)
-        #     osm_result = tag["osm_tag"].split("=")
-        #     # Append the split results to "or" list in entityflts
-        #     entityflts["or"].append({"k": osm_result[0], "op": "=", "v": osm_result[1]})
+        entityfilters = osm_results[0]["imr"]
+        node["filters"] = replace_keys_recursive(node["filters"])
 
-        entityflts = {"or": osm_results[0]["imr"]}
-
-        # Determine how to set 'filters' based on whether node["flts"] is empty or not
+        # Determine how to set 'filters' based on whether node["filters"] is empty or not
         if node["filters"] == []:
-            # If empty, set filters to entityflts
-            filters = [entityflts]
+            # If empty, set filters to entityfilters
+            filters = [entityfilters]
         else:
-            # Otherwise, append entityflts to existing node["flts"] under "and" key
-            filters = [{"and": node["filters"] + [entityflts]}]
+            # Otherwise, append entityfilters to existing node["filters"] under "and" key
+            filters = [{"and": node["filters"] + [entityfilters]}]
 
         # Update the "flts" field in the node with the new filters
         node["filters"] = filters
@@ -166,6 +151,31 @@ def inference(sentence: str) -> str:
         del result["es"]
 
     return {"result": result, "raw": raw_result}
+
+
+def replace_keys_recursive(filters):
+    new_filters = []
+    for filter_item in filters:
+        new_item = {}
+        for k, v in filter_item.items():
+            if k == "k":
+                new_k = "key"
+            elif k == "v":
+                new_k = "value"
+            elif k == "op":
+                new_k = "operator"
+            elif k == "n":
+                new_k = "name"
+            else:
+                new_k = k
+
+            if isinstance(v, list):
+                new_item[new_k] = replace_keys_recursive(v)
+            else:
+                new_item[new_k] = v
+
+        new_filters.append(new_item)
+    return new_filters
 
 
 # Entry point for script execution
