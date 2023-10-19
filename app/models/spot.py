@@ -92,10 +92,10 @@ def process_nodes(nodes: list) -> list:
         # Determine how to set 'filters' based on whether node["filters"] is empty or not
         if node["filters"] == []:
             # If empty, set filters to entityfilters
-            filters = [entityfilters]
+            filters = entityfilters
         else:
             # Otherwise, append entityfilters to existing node["filters"] under "and" key
-            filters = [{"and": node["filters"] + [entityfilters]}]
+            filters = [{"and": node["filters"] + entityfilters}]
 
         # Update the "flts" field in the node with the new filters
         node["filters"] = filters
