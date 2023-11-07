@@ -118,17 +118,14 @@ def process_nodes(nodes: list) -> list:
 def inference(sentence: str) -> str:
     # Prepare input and perform inference
     sentence = sentence.lower()
-    result = pipeline([sentence], do_sample=False, max_length=MAX_LENGTH, pad_token_id=tokenizer.pad_token_id)
-    json_str = result[0]["generated_text"]
+    raw_result = pipeline([sentence], do_sample=False, max_length=MAX_LENGTH, pad_token_id=tokenizer.pad_token_id)
+    raw_result = raw_result[0]["generated_text"]
 
     # Post-process the results
     try:
-        result = json.loads(dirtyjson.loads(json_str))
+        result = json.loads(dirtyjson.loads(raw_result))
     except json.decoder.JSONDecodeError as e:
-        result = fix_json(json_str)
-
-    print("result")
-    print(result)
+        result = fix_json(raw_result)
 
     # Process and delete "a" if present
     if "a" in result:
@@ -160,8 +157,6 @@ def fix_json(text, decoder=json.JSONDecoder()):
         try:
             sub_text = text[match:]
             if "\"a\":" in sub_text:
-                print("subtext")
-                print(sub_text)
                 start_index = sub_text.find('\"a\":')
                 end_index = sub_text.find('\"es\":')
                 input_text = sub_text[start_index + len('\"a\":'):end_index]
@@ -191,13 +186,26 @@ def fix_json(text, decoder=json.JSONDecoder()):
                 ns_objs = dirtyjson.loads(input_text)
                 fixed_data["ns"] = []
                 for ns_obj in ns_objs:
-                    fixed_data["ns"].append({"id": ns_obj["id"],
-                                             "n": ns_obj["n"]
-                                             })
+                    fixed_ns_obj = {}
+                    fixed_ns_obj["id"] = ns_obj["id"]
+                    fixed_ns_obj["n"] = ns_obj["n"]
+                    flts = []
+                    if "flts" in ns_obj:
+                        for flt in ns_obj["flts"]:
+                            flts.append(
+                                {"n": flt["n"],
+                                 "op": flt["op"],
+                                 "v": flt["v"],
+                                 "k": flt["k"]
+                                 }
+                            )
+                    if len(flts) > 0:
+                        fixed_ns_obj["flts"] = flts
+
+                    fixed_data["ns"].append(fixed_ns_obj)
             result, index = decoder.raw_decode(text[match:])
             pos = match + index
         except ValueError:
-            print("error")
             pos = match + 1
 
     return fixed_data
