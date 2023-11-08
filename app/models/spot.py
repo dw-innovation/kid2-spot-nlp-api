@@ -1,4 +1,5 @@
 import torch
+import inflect
 import re
 import requests
 from diskcache import Cache
@@ -41,6 +42,7 @@ pipeline = Text2TextGenerationPipeline(model=transformer_model, batch_size=16,
                                        device=device,  # model.device,
                                        clean_up_tokenization_spaces=True)
 
+plural_converter = inflect.engine()
 
 # Cache and fetch OpenStreetMap tags
 @cache.memoize()
@@ -88,6 +90,7 @@ def process_nodes(nodes: list) -> list:
         node["filters"] = node.pop("flts")
 
         node["name"] = node.pop("n")
+        node["display_name"] = plural_converter.plural_noun(node["name"])
 
         # Search OpenStreetMap tags based on the node name
         osm_results = search_osm_tag(node["name"])
@@ -242,3 +245,5 @@ if __name__ == "__main__":
         output = inference(
             sentence="Find all wind turbines that have a height of 1201 meters or less, all pharmacies, all bars with the name Smith Lane and have more than 1098 levels, and all supermarkets with a building that has less than 1208 levels."
         )
+
+        print(output)
