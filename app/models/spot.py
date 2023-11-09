@@ -2,6 +2,7 @@ import torch
 import itertools
 import inflect
 import re
+import codecs
 import requests
 from diskcache import Cache
 import json
@@ -45,6 +46,7 @@ pipeline = Text2TextGenerationPipeline(model=transformer_model, batch_size=16,
 
 plural_converter = inflect.engine()
 
+
 # Cache and fetch OpenStreetMap tags
 @cache.memoize()
 def search_osm_tag(entity):
@@ -55,11 +57,24 @@ def search_osm_tag(entity):
     return r.json()
 
 
+def decode_unicode(text):
+    def unicode_replacer(match):
+        return codecs.decode(match.group(0), 'unicode_escape')
+
+    pattern = re.compile(r'\\u[0-9a-fA-F]{4}')
+    decoded_text = pattern.sub(unicode_replacer, text)
+    decoded_text = decoded_text.replace('\\', '')
+    return decoded_text
+
+
 # Process the 'area' part of the result
 def process_area(area: dict) -> dict:
     if "v" not in area:
         area["v"] = [-90, -180, 90, 180]
     area["value"] = area.pop("v")
+    area_name = area["value"]
+    if isinstance(area_name, str):
+        area["value"] = decode_unicode(area_name)
     area["type"] = area.pop("t")
 
     return area
@@ -102,7 +117,7 @@ def process_nodes(nodes: list) -> list:
 
         entityfilters = osm_results[0]["imr"]
 
-        if len(entityfilters) >0:
+        if len(entityfilters) > 0:
             if isinstance(entityfilters, list):
                 entityfilters = entityfilters[0]
 
@@ -195,7 +210,7 @@ def fix_json(text, decoder=json.JSONDecoder()):
             if "\"ns\"" in sub_text:
                 start_index = sub_text.find('\"ns\":')
                 end_index = sub_text.rfind('}')
-                input_text = sub_text[start_index+ len('\"ns\":'):end_index]
+                input_text = sub_text[start_index + len('\"ns\":'):end_index]
                 input_text = input_text.replace("}} ]", "} } ]").replace("} } ]", "} ]")
                 ns_objs = dirtyjson.loads(input_text)
                 fixed_data["ns"] = []
@@ -208,6 +223,7 @@ def fix_json(text, decoder=json.JSONDecoder()):
         except ValueError:
             pos = match + 1
     return fixed_data
+
 
 def replace_keys_recursive(filters):
     new_filters = []
@@ -236,10 +252,10 @@ def replace_keys_recursive(filters):
 # Entry point for script execution
 if __name__ == "__main__":
     with torch.inference_mode():
-        output = inference(
-            sentence="Find all wind turbines that have a height of 1201 meters or less, all pharmacies, all bars with the name Smith Lane and have more than 1098 levels, and all supermarkets with a building that has less than 1208 levels."
-        )
         # output = inference(
-        #     sentence="Find all cafes closer than 100m to a kiosk in München Straße."
+        #     sentence="Find all wind turbines that have a height of 1201 meters or less, all pharmacies, all bars with the name Smith Lane and have more than 1098 levels, and all supermarkets with a building that has less than 1208 levels."
         # )
+        output = inference(
+            sentence="Find all cafes closer than 100m to a kiosk in München Straße."
+        )
         print(output)
