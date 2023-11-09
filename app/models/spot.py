@@ -1,4 +1,5 @@
 import torch
+import itertools
 import inflect
 import re
 import requests
@@ -100,6 +101,11 @@ def process_nodes(nodes: list) -> list:
             continue
 
         entityfilters = osm_results[0]["imr"]
+
+        if len(entityfilters) >0:
+            if isinstance(entityfilters, list):
+                entityfilters = entityfilters[0]
+
         node["filters"] = replace_keys_recursive(node["filters"])
 
         # Determine how to set 'filters' based on whether node["filters"] is empty or not
@@ -127,7 +133,10 @@ def inference(sentence: str) -> str:
     # Post-process the results
     try:
         result = json.loads(dirtyjson.loads(raw_result))
+        if isinstance(result, str):
+            result = fix_json(raw_result)
     except json.decoder.JSONDecodeError as e:
+        logger.error(f"Parsing error {e}. Trying out fixing it.")
         result = fix_json(raw_result)
 
     # Process and delete "a" if present
@@ -150,6 +159,7 @@ def inference(sentence: str) -> str:
 
 # Clean up the result string for JSON conversion
 def fix_json(text, decoder=json.JSONDecoder()):
+    text = re.sub(r'\\+"', r'"', text)
     fixed_data = {}
     pos = 0
     while True:
@@ -159,12 +169,13 @@ def fix_json(text, decoder=json.JSONDecoder()):
             break
         try:
             sub_text = text[match:]
+
             if "\"a\":" in sub_text:
                 start_index = sub_text.find('\"a\":')
                 end_index = sub_text.find('\"es\":')
                 input_text = sub_text[start_index + len('\"a\":'):end_index]
                 area_obj = dirtyjson.loads(input_text)
-                if area_obj["t"] != "bbox":
+                if "v" in area_obj:
                     fixed_data["a"] = {"t": area_obj["t"], "v": area_obj["v"]}
                 else:
                     fixed_data["a"] = {"t": area_obj["t"]}
@@ -184,35 +195,19 @@ def fix_json(text, decoder=json.JSONDecoder()):
             if "\"ns\"" in sub_text:
                 start_index = sub_text.find('\"ns\":')
                 end_index = sub_text.rfind('}')
-                input_text = sub_text[start_index + len('\"ns\":'):end_index]
-                input_text = input_text.replace("}} ]", "}]")
+                input_text = sub_text[start_index+ len('\"ns\":'):end_index]
+                input_text = input_text.replace("}} ]", "} } ]").replace("} } ]", "} ]")
                 ns_objs = dirtyjson.loads(input_text)
                 fixed_data["ns"] = []
                 for ns_obj in ns_objs:
-                    fixed_ns_obj = {}
-                    fixed_ns_obj["id"] = ns_obj["id"]
-                    fixed_ns_obj["n"] = ns_obj["n"]
-                    flts = []
-                    if "flts" in ns_obj:
-                        for flt in ns_obj["flts"]:
-                            flts.append(
-                                {"n": flt["n"],
-                                 "op": flt["op"],
-                                 "v": flt["v"],
-                                 "k": flt["k"]
-                                 }
-                            )
-                    if len(flts) > 0:
-                        fixed_ns_obj["flts"] = flts
-
-                    fixed_data["ns"].append(fixed_ns_obj)
+                    fixed_data["ns"].append({"id": ns_obj["id"],
+                                             "n": ns_obj["n"]
+                                             })
             result, index = decoder.raw_decode(text[match:])
             pos = match + index
         except ValueError:
             pos = match + 1
-
     return fixed_data
-
 
 def replace_keys_recursive(filters):
     new_filters = []
@@ -234,7 +229,6 @@ def replace_keys_recursive(filters):
                 new_item[new_k] = replace_keys_recursive(v)
             else:
                 new_item[new_k] = v
-
         new_filters.append(new_item)
     return new_filters
 
@@ -245,5 +239,7 @@ if __name__ == "__main__":
         output = inference(
             sentence="Find all wind turbines that have a height of 1201 meters or less, all pharmacies, all bars with the name Smith Lane and have more than 1098 levels, and all supermarkets with a building that has less than 1208 levels."
         )
-
+        # output = inference(
+        #     sentence="Find all cafes closer than 100m to a kiosk in München Straße."
+        # )
         print(output)
