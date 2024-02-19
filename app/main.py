@@ -1,14 +1,13 @@
-from fastapi.responses import JSONResponse
-import torch
 from pydantic import BaseModel
 from typing import Dict
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from models.spot import inference
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 from pymongo import MongoClient
+from adopt_generation import adopt_generation
+from chatgpt import inference
 import os
 
 app = FastAPI()
@@ -57,7 +56,6 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     response_model=Response,
     status_code=status.HTTP_200_OK,
 )
-@torch.inference_mode()
 def transform_sentence_to_imr(body: SentenceModel):
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -67,6 +65,8 @@ def transform_sentence_to_imr(body: SentenceModel):
                 status_code=status.HTTP_204_NO_CONTENT, detail="No output generated"
             )
 
+        output['result'] = adopt_generation(output['result'])
+
         # Store data in MongoDB
         result_data = {
             "timestamp": timestamp,
@@ -75,7 +75,9 @@ def transform_sentence_to_imr(body: SentenceModel):
             "rawOutput": output["raw"],
             "status": "success",
             "modelVersion": model_version,
+            "prompt": None
         }
+
         # Insert into MongoDB
         collection.insert_one(result_data.copy())
 
@@ -87,9 +89,11 @@ def transform_sentence_to_imr(body: SentenceModel):
         error_data = {
             "timestamp": timestamp,
             "inputSentence": body.sentence if body else "N/A",
+            "rawOutput": output["raw"],
             "error": str(e),
             "status": "error",
             "modelVersion": model_version,
+            "prompt": None
         }
         collection.insert_one(error_data)
 

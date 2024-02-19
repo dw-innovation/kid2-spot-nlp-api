@@ -1,17 +1,16 @@
-import torch
-import itertools
-import inflect
-import re
 import codecs
-import requests
-from diskcache import Cache
-import json
 import dirtyjson
+import inflect
+import json
 import os
-from loguru import logger
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, Text2TextGenerationPipeline
-from peft import PeftModel
+import re
+import requests
+import torch
+from diskcache import Cache
 from dotenv import load_dotenv
+from loguru import logger
+from peft import PeftModel
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, Text2TextGenerationPipeline
 
 logger.add(f"{__name__}.log", rotation="500 MB")
 
@@ -139,37 +138,12 @@ def process_nodes(nodes: list) -> list:
 
 
 # Main inference function
-def inference(sentence: str) -> str:
+def generate(sentence: str) -> str:
     # Prepare input and perform inference
     sentence = sentence.lower()
     raw_result = pipeline([sentence], do_sample=False, max_length=MAX_LENGTH, pad_token_id=tokenizer.pad_token_id)
     raw_result = raw_result[0]["generated_text"]
-
-    # Post-process the results
-    try:
-        result = json.loads(dirtyjson.loads(raw_result))
-        if isinstance(result, str):
-            result = fix_json(raw_result)
-    except json.decoder.JSONDecodeError as e:
-        logger.error(f"Parsing error {e}. Trying out fixing it.")
-        result = fix_json(raw_result)
-
-    # Process and delete "a" if present
-    if "a" in result:
-        result["area"] = process_area(result["a"])
-        del result["a"]
-
-    # Process and delete "ns" if present
-    if "ns" in result:
-        result["nodes"] = process_nodes(result["ns"])
-        del result["ns"]
-
-    # Process and delete "es" if present
-    if "es" in result:
-        result["edges"] = process_edges(result["es"])
-        del result["es"]
-
-    return {"result": result, "raw": raw_result}
+    return {'result': raw_result}
 
 
 # Clean up the result string for JSON conversion
