@@ -24,7 +24,7 @@ def validate_and_fix_yaml(yaml_text):
         return result
     except yaml.parser.ParserError as e:
         line_num = e.problem_mark.line
-        column_num = e.problem_mark.column
+        # column_num = e.problem_mark.column
         lines = yaml_text.split('\n')
 
         misformatted_line = lines[line_num]
@@ -34,7 +34,7 @@ def validate_and_fix_yaml(yaml_text):
             return validate_and_fix_yaml(yaml_text)
     except yaml.composer.ComposerError as e:
         line_num = e.problem_mark.line
-        column_num = e.problem_mark.column
+        # column_num = e.problem_mark.column
         lines = yaml_text.split('\n')
 
         if "value" in lines[line_num]:
