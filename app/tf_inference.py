@@ -1,7 +1,5 @@
 import codecs
-import dirtyjson
 import inflect
-import json
 import os
 import re
 import requests
@@ -66,161 +64,14 @@ def decode_unicode(text):
     return decoded_text
 
 
-# Process the 'area' part of the result
-def process_area(area: dict) -> dict:
-    if "v" not in area:
-        area["v"] = [-90, -180, 90, 180]
-    area["value"] = area.pop("v")
-    area_name = area["value"]
-    if isinstance(area_name, str):
-        area["value"] = decode_unicode(area_name)
-    area["type"] = area.pop("t")
-
-    return area
-
-
-# Process 'edges', change the minimized results
-def process_edges(edges: list) -> list:
-    for idx, edge in enumerate(edges):
-        edge["type"] = edge.pop("t")
-        edge["source"] = edge.pop("src")
-        edge["target"] = edge.pop("tgt")
-        edge["distance"] = edge.pop("dist")
-        edges[idx] = edge
-
-    return edges
-
-
-# Process the 'nodes' part of the result
-def process_nodes(nodes: list) -> list:
-    # Iterate through each node in the list
-    for idx, node in enumerate(nodes):
-        # Set node type to "nwr"
-        node["type"] = "nwr"
-
-        # Initialize "flts" key if not present
-        if "flts" not in node:
-            node["flts"] = []
-
-        node["filters"] = node.pop("flts")
-
-        node["name"] = node.pop("n")
-        node["display_name"] = plural_converter.plural_noun(node["name"])
-
-        # Search OpenStreetMap tags based on the node name
-        osm_results = search_osm_tag(node["name"])
-
-        if len(osm_results) == 0:
-            logger.error(f"No OSM Tags found {node['name']}")
-            continue
-
-        entityfilters = osm_results[0]["imr"]
-
-        if len(entityfilters) > 0:
-            if isinstance(entityfilters, list):
-                entityfilters = entityfilters[0]
-
-        node["filters"] = replace_keys_recursive(node["filters"])
-
-        # Determine how to set 'filters' based on whether node["filters"] is empty or not
-        if node["filters"] == []:
-            # If empty, set filters to entityfilters
-            filters = entityfilters
-        else:
-            # Otherwise, append entityfilters to existing node["filters"] under "and" key
-            filters = [{"and": node["filters"] + entityfilters}]
-
-        # Update the "flts" field in the node with the new filters
-        node["filters"] = filters
-        # Update the node in the original list
-        nodes[idx] = node
-    return nodes
-
-
 # Main inference function
 def generate(sentence: str) -> str:
-    # Prepare input and perform inference
+    raw_result = None
     sentence = sentence.lower()
-    raw_result = pipeline([sentence], do_sample=False, max_length=MAX_LENGTH, pad_token_id=tokenizer.pad_token_id)
-    raw_result = raw_result[0]["generated_text"]
-    return {'result': raw_result}
-
-
-# Clean up the result string for JSON conversion
-def fix_json(text, decoder=json.JSONDecoder()):
-    text = re.sub(r'\\+"', r'"', text)
-    fixed_data = {}
-    pos = 0
-    while True:
-        match = text.find('{', pos)
-
-        if match == -1:
-            break
-        try:
-            sub_text = text[match:]
-
-            if "\"a\":" in sub_text:
-                start_index = sub_text.find('\"a\":')
-                end_index = sub_text.find('\"es\":')
-                input_text = sub_text[start_index + len('\"a\":'):end_index]
-                area_obj = dirtyjson.loads(input_text)
-                if "v" in area_obj:
-                    fixed_data["a"] = {"t": area_obj["t"], "v": area_obj["v"]}
-                else:
-                    fixed_data["a"] = {"t": area_obj["t"]}
-            if "\"es\"" in sub_text:
-                start_index = sub_text.find('\"es\":')
-                end_index = sub_text.find('\"ns\":')
-                input_text = sub_text[start_index + len('\"es\":'):end_index]
-                es_objs = dirtyjson.loads(input_text)
-
-                fixed_data["es"] = []
-                for es_obj in es_objs:
-                    fixed_data["es"].append({"src": es_obj["src"],
-                                             "tgt": es_obj["tgt"],
-                                             "t": es_obj["t"],
-                                             "dist": es_obj["dist"]
-                                             })
-            if "\"ns\"" in sub_text:
-                start_index = sub_text.find('\"ns\":')
-                end_index = sub_text.rfind('}')
-                input_text = sub_text[start_index + len('\"ns\":'):end_index]
-                input_text = input_text.replace("}} ]", "} } ]").replace("} } ]", "} ]")
-                ns_objs = dirtyjson.loads(input_text)
-                fixed_data["ns"] = []
-                for ns_obj in ns_objs:
-                    fixed_data["ns"].append({"id": ns_obj["id"],
-                                             "n": ns_obj["n"]
-                                             })
-            result, index = decoder.raw_decode(text[match:])
-            pos = match + index
-        except ValueError:
-            pos = match + 1
-    return fixed_data
-
-
-def replace_keys_recursive(filters):
-    new_filters = []
-    for filter_item in filters:
-        new_item = {}
-        for k, v in filter_item.items():
-            if k == "k":
-                new_k = "key"
-            elif k == "v":
-                new_k = "value"
-            elif k == "op":
-                new_k = "operator"
-            elif k == "n":
-                new_k = "name"
-            else:
-                new_k = k
-
-            if isinstance(v, list):
-                new_item[new_k] = replace_keys_recursive(v)
-            else:
-                new_item[new_k] = v
-        new_filters.append(new_item)
-    return new_filters
+    with torch.inference_mode():
+        raw_result = pipeline([sentence], do_sample=False, max_length=MAX_LENGTH, pad_token_id=tokenizer.pad_token_id)
+        raw_result = raw_result[0]["generated_text"]
+    return raw_result
 
 
 # Entry point for script execution
@@ -229,7 +80,7 @@ if __name__ == "__main__":
         # output = inference(
         #     sentence="Find all wind turbines that have a height of 1201 meters or less, all pharmacies, all bars with the name Smith Lane and have more than 1098 levels, and all supermarkets with a building that has less than 1208 levels."
         # )
-        output = inference(
+        output = generate(
             sentence="Find all cafes closer than 100m to a kiosk in München Straße."
         )
         print(output)

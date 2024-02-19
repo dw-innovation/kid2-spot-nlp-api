@@ -6,8 +6,9 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 from pymongo import MongoClient
+from tf_inference import generate
+from yaml_parser import validate_and_fix_yaml
 from adopt_generation import adopt_generation
-from chatgpt import inference
 import os
 
 app = FastAPI()
@@ -59,20 +60,23 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 def transform_sentence_to_imr(body: SentenceModel):
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        output = inference(body.sentence)
+        raw_output = generate(body.sentence)
+        parsed_result = validate_and_fix_yaml(raw_output)
+        output = adopt_generation(parsed_result)
         if not output:
             raise HTTPException(
                 status_code=status.HTTP_204_NO_CONTENT, detail="No output generated"
             )
 
-        output['result'] = adopt_generation(output['result'])
+        raw_output = output['result']
+        imr_result = adopt_generation(raw_output)
 
         # Store data in MongoDB
         result_data = {
             "timestamp": timestamp,
             "inputSentence": body.sentence,
-            "imr": output["result"],
-            "rawOutput": output["raw"],
+            "imr": imr_result,
+            "rawOutput": raw_output,
             "status": "success",
             "modelVersion": model_version,
             "prompt": None
@@ -89,7 +93,7 @@ def transform_sentence_to_imr(body: SentenceModel):
         error_data = {
             "timestamp": timestamp,
             "inputSentence": body.sentence if body else "N/A",
-            "rawOutput": output["raw"],
+            "rawOutput": raw_output,
             "error": str(e),
             "status": "error",
             "modelVersion": model_version,

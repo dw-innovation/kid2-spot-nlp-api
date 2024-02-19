@@ -33,8 +33,6 @@ def is_nested_list(l):
     return True
 
 
-
-
 @cache.memoize()
 def search_osm_tag(entity):
     PARAMS = {"word": entity, "limit": 1, "detail": False}
@@ -72,7 +70,6 @@ def adopt_generation(parsed_result):
     parsed_result['nodes'] = parsed_result.pop('entities')
 
     processed_nodes = []
-
     for node in parsed_result['nodes']:
         if 'name' not in node:
             print(f'{node} has not the required name field!')
