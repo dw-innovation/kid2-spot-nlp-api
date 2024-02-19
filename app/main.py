@@ -62,13 +62,13 @@ def transform_sentence_to_imr(body: SentenceModel):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         raw_output = generate(body.sentence)
         parsed_result = validate_and_fix_yaml(raw_output)
-        output = adopt_generation(parsed_result)
-        if not output:
+        imr_result = adopt_generation(parsed_result)
+
+        if not imr_result:
             raise HTTPException(
                 status_code=status.HTTP_204_NO_CONTENT, detail="No output generated"
             )
 
-        raw_output = output['result']
         imr_result = adopt_generation(raw_output)
 
         # Store data in MongoDB
