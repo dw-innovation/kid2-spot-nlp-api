@@ -1,5 +1,6 @@
 import inflect
 import os
+import pandas as pd
 import requests
 import sys
 from collections.abc import Iterable
@@ -13,6 +14,18 @@ sys.path.append(PROJECT_PATH)
 cache = Cache("tmp")
 SEARCH_ENDPOINT = os.getenv("SEARCH_ENDPOINT")
 PLURAL_ENGINE = inflect.engine()
+
+load_dotenv()
+
+tag_attributes = pd.read_csv(os.getenv("TAG_DB"))
+tag_attributes = tag_attributes[tag_attributes["type"] == "attr"]
+
+print(f"number of tag attributes {len(tag_attributes)}")
+
+ATT_TAG_MAPPING = {}
+for tag_att in tag_attributes.to_dict(orient='records'):
+    for descriptor in tag_att['descriptors'].split("|"):
+        ATT_TAG_MAPPING[descriptor.lower()] = tag_att['tags']
 
 
 def flatten(xs):
@@ -42,9 +55,19 @@ def search_osm_tag(entity):
     return r.json()
 
 
+def apply_rule(text):
+    # todo: optimize it
+    if "restaurant" in text:
+        att_tag = {'key': 'cuisine', 'operator': '=', 'value': text.split(" ")[0]}
+
+    return att_tag
+
+
 def build_filters(node):
+    node_name = node["name"]
     osm_results = search_osm_tag(node["name"])
     ent_filters = osm_results[0]["imr"]
+    additional_att_tag = None
 
     processed_filters = []
     if len(ent_filters) > 0:
@@ -53,9 +76,15 @@ def build_filters(node):
         else:
             processed_filters.extend(ent_filters)
 
+    if len(node_name.split(" ")) == 2:
+        additional_att_tag = apply_rule(node_name)
+
     if "features" in node:
         node['filters'] = node.pop('features')
-        processed_filters = processed_filters.extend({"and": node["filters"]})
+        processed_filters.extend({"and": node["filters"]})
+
+    if additional_att_tag:
+        processed_filters = [{"and": [processed_filters[0], additional_att_tag]}]
 
     return processed_filters
 

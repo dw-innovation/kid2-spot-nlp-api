@@ -40,25 +40,94 @@ class TestAdoptFunction(unittest.TestCase):
                                     'edges': [{'type': 'dist', 'source': 0, 'target': 1, 'distance': '100 m'}]},
             },
             {
-                "input": {'area': {'name': '', 'type': 'bbox'}, 'entities': [{'filters': [
-                    {'name': 'height', 'operator': '=', 'value': '1201 m'},
-                    {'name': 'height', 'operator': None, 'value': '1201 m'},
-                    {'name': 'pharmacie', 'operator': '=', 'value': 'pharmacy'},
-                    {'name': 'bar', 'operator': '=', 'value': 'bar'},
-                    {'name': 'name', 'operator': '=', 'value': 'smith lane'}], 'id': 0, 'name': 'wind turbine'}, {
-                    'filters': [{'name': 'building levels',
-                                 'operator': None,
-                                 'value': '1098'}],
-                    'id': 1, 'name': 'supermarket'}]},
-                "expected_output": {'area': {'name': '', 'type': 'bbox'}, 'entities': [{'filters': [
-                    {'name': 'height', 'operator': '=', 'value': '1201 m'},
-                    {'name': 'pharmacie', 'operator': '=', 'value': 'pharmacy'},
-                    {'name': 'bar', 'operator': '=', 'value': 'bar'},
-                    {'name': 'name', 'operator': '=', 'value': 'smith lane'}], 'id': 0, 'name': 'wind turbine'}, {
-                    'filters': [{'name': 'building levels',
-                                 'operator': '=',
-                                 'value': '1098'}],
-                    'id': 1, 'name': 'supermarket'}]},
+                "input": {
+                    "area": {
+                        "type": "area",
+                        "name": "London"
+                    },
+                    "relations": [
+                        {
+                            "source": 0,
+                            "target": 1,
+                            "name": "dist",
+                            "value": "200 m"
+                        }
+                    ],
+                    "entities": [
+                        {
+                            "id": 0,
+                            "name": "italian restaurant",
+                        },
+                        {
+                            "id": 1,
+                            "name": "fountain",
+                        }
+                    ]
+                },
+                "expected_output": {
+                    "area": {
+                        "type": "area",
+                        "value": "London"
+                    },
+                    "edges": [
+                        {
+                            "source": 0,
+                            "target": 1,
+                            "type": "dist",
+                            "distance": "200 m"
+                        }
+                    ],
+                    "nodes": [
+                        {
+                            "id": 0,
+                            "name": "italian restaurant",
+                            "display_name": "italian restaurants",
+                            "type": "nwr",
+                            "filters": [
+                                {
+                                    "and": [
+
+                                        {'or': [{'key': 'amenity', 'operator': '=', 'value': 'restaurant'},
+                                                {'key': 'amenity', 'operator': '=', 'value': 'food_court'},
+                                                {'key': 'amenity', 'operator': '=', 'value': 'fast_food'}]},
+                                        {
+                                            "key": "cuisine",
+                                            "operator": "=",
+                                            "value": "italian"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "id": 1,
+                            "name": "fountain",
+                            "display_name": "fountains",
+                            "type": "nwr",
+                            "filters": [
+                                {
+                                    "or": [
+                                        {
+                                            "key": "amenity",
+                                            "operator": "=",
+                                            "value": "fountain"
+                                        },
+                                        {
+                                            "key": "man_made",
+                                            "operator": "=",
+                                            "value": "water_well"
+                                        },
+                                        {
+                                            "key": "man_made",
+                                            "operator": "=",
+                                            "value": "water_tap"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
 
             }
         ]
@@ -66,6 +135,9 @@ class TestAdoptFunction(unittest.TestCase):
     def test_assign_combination(self):
         for sample in self.test_data:
             predicted_output = adopt_generation(sample['input'])
+
+            print("input")
+            print(sample["input"])
 
             print("predicted_output")
             print(predicted_output)
