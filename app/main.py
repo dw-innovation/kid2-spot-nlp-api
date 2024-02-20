@@ -62,8 +62,18 @@ def transform_sentence_to_imr(body: SentenceModel):
         imr_result = adopt_generation(parsed_result)
 
         if not imr_result:
+            error_data = {
+                "timestamp": timestamp,
+                "inputSentence": body.sentence,
+                "imr": imr_result,
+                "rawOutput": raw_output,
+                "error": str(e),
+                "status": "error",
+                "modelVersion": model_version,
+                "prompt": None
+            }
             raise HTTPException(
-                status_code=status.HTTP_204_NO_CONTENT, detail="No output generated"
+                status_code=status.HTTP_204_NO_CONTENT, detail=error_data
             )
 
         imr_result = adopt_generation(raw_output)
