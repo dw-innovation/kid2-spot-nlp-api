@@ -79,8 +79,6 @@ def build_filters(node):
     if len(node_name.split(" ")) == 2:
         additional_att_tag = apply_rule(node_name)
 
-    print(node)
-
     if "filters" in node:
         node_flts = []
 
