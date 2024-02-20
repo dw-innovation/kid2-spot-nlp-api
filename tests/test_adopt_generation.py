@@ -38,12 +38,38 @@ class TestAdoptFunction(unittest.TestCase):
                                         }
                                     ],
                                     'edges': [{'type': 'dist', 'source': 0, 'target': 1, 'distance': '100 m'}]},
+            },
+            {
+                "input": {'area': {'name': '', 'type': 'bbox'}, 'entities': [{'filters': [
+                    {'name': 'height', 'operator': '=', 'value': '1201 m'},
+                    {'name': 'height', 'operator': None, 'value': '1201 m'},
+                    {'name': 'pharmacie', 'operator': '=', 'value': 'pharmacy'},
+                    {'name': 'bar', 'operator': '=', 'value': 'bar'},
+                    {'name': 'name', 'operator': '=', 'value': 'smith lane'}], 'id': 0, 'name': 'wind turbine'}, {
+                    'filters': [{'name': 'building levels',
+                                 'operator': None,
+                                 'value': '1098'}],
+                    'id': 1, 'name': 'supermarket'}]},
+                "expected_output": {'area': {'name': '', 'type': 'bbox'}, 'entities': [{'filters': [
+                    {'name': 'height', 'operator': '=', 'value': '1201 m'},
+                    {'name': 'pharmacie', 'operator': '=', 'value': 'pharmacy'},
+                    {'name': 'bar', 'operator': '=', 'value': 'bar'},
+                    {'name': 'name', 'operator': '=', 'value': 'smith lane'}], 'id': 0, 'name': 'wind turbine'}, {
+                    'filters': [{'name': 'building levels',
+                                 'operator': '=',
+                                 'value': '1098'}],
+                    'id': 1, 'name': 'supermarket'}]},
+
             }
         ]
 
     def test_assign_combination(self):
         for sample in self.test_data:
             predicted_output = adopt_generation(sample['input'])
+
+            print("predicted_output")
+            print(predicted_output)
+
             assert predicted_output == sample['expected_output']
 
     if __name__ == '__main__':

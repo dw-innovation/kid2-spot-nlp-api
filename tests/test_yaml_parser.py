@@ -1,3 +1,4 @@
+import yaml
 from app.yaml_parser import validate_and_fix_yaml
 
 generated_yaml = 'area:\n   name: cologne\n   type: area\n entities:\n - id: 0\n   name: bar\n'
@@ -39,3 +40,20 @@ entities:
 '''
 validated_data = validate_and_fix_yaml(generated_yaml)
 assert validated_data
+
+generated_yaml = '''area:\n   name: Berlin Neuk\u00f6ln\n   type: area\n entities:\n - filters:\n   - name: name\n     operator: '='\n     value: 2645 id: 0\n   name: shop\n'''
+expected_yaml = '''area:
+   name: Berlin Neuköln
+   type: area
+entities:
+   - id: 0
+     name: shop
+     filters:
+     - name: name
+       operator: '='
+       value: 2645
+'''
+
+validated_data = validate_and_fix_yaml(generated_yaml)
+assert validated_data == yaml.safe_load(expected_yaml)
+
