@@ -90,7 +90,7 @@ def transform_sentence_to_imr(body: SentenceModel):
         }
 
         return JSONResponse(content=result_data)
-    except Exception as e:
+    except HTTPException as e:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         error_data = {
             "timestamp": timestamp,

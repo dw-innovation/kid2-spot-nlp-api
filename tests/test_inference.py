@@ -4,7 +4,8 @@ from app.adopt_generation import adopt_generation
 
 if __name__ == '__main__':
     # input_sentence = "Find all italian restaurants that are no more than 200 meters from a fountain in London."
-    input_sentence = "Find supermarkets whose height is larger than 10"
+    # input_sentence = "Find supermarkets whose height is larger than 10"
+    input_sentence = "find me restaurants in berlin"
     raw_output = generate(input_sentence)
 
     print("===raw_output===")
