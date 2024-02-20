@@ -1,21 +1,18 @@
-from pydantic import BaseModel
-from typing import Dict
+import os
+from datetime import datetime
 from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
-from datetime import datetime
-from pymongo import MongoClient
+from pydantic import BaseModel
+from typing import Dict
+
+from adopt_generation import adopt_generation
 from tf_inference import generate
 from yaml_parser import validate_and_fix_yaml
-from adopt_generation import adopt_generation
-import os
 
 app = FastAPI()
 
-client = MongoClient(os.getenv("MONGO_URI"))
-db = client[os.getenv("MONGO_DB_NAME")]
-collection = db[os.getenv("MONGO_COLLECTION_NAME")]
 model_version = os.getenv("MODEL_VERSION")
 
 origins = ["*"]
@@ -82,11 +79,6 @@ def transform_sentence_to_imr(body: SentenceModel):
             "prompt": None
         }
 
-        # Insert into MongoDB
-        collection.insert_one(result_data.copy())
-
-        result_data.pop("_id", None)
-
         return JSONResponse(content=result_data)
     except Exception as e:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -99,8 +91,6 @@ def transform_sentence_to_imr(body: SentenceModel):
             "modelVersion": model_version,
             "prompt": None
         }
-        collection.insert_one(error_data)
-
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_data
         )
