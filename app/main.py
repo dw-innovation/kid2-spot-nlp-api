@@ -76,8 +76,6 @@ def transform_sentence_to_imr(body: SentenceModel):
                 status_code=status.HTTP_204_NO_CONTENT, detail=error_data
             )
 
-        imr_result = adopt_generation(raw_output)
-
         # Store data in MongoDB
         result_data = {
             "timestamp": timestamp,
