@@ -129,19 +129,54 @@ class TestAdoptFunction(unittest.TestCase):
                     ]
                 }
 
+            },
+            {
+                "input": {
+                    'area': {'name': '', 'type': 'bbox'},
+                    'entities': [{'id': 0, 'name': 'kiosk'}, {'id': 1, 'name': 'supermarket', 'filters': [{'name': 'height', 'operator': '=', 'value': "10"}]}],
+
+                },
+                "expected_output": {
+                    "area": {"type": "area", "value": "bbox"},
+                    "nodes": [
+                        {
+                            'id': 0,
+                            'type': 'nwr',
+                            'filters': [
+                                {
+                                    'or': [{'key': 'building', 'operator': '=', 'value': 'kiosk'},
+                                           {'key': 'shop', 'operator': '=', 'value': 'kiosk'},
+                                           {'key': 'shop', 'operator': '=', 'value': 'convenience'}]}],
+                            'name': 'kiosk',
+                            'display_name': 'kiosks'
+                        },
+                        {
+                            "id": 1,
+                            "type": "nwr",
+                            "filters": [
+                                {
+                                    "and": [
+                                        {
+                                            "or": [
+                                                {"key": "shop", "operator": "=", "value": "supermarket"},
+                                                {"key": "building", "operator": "=", "value": "supermarket"}
+                                            ]
+                                        },
+                                        {'operator': '=', 'value': '10', 'key': 'height'}
+                                    ]
+                                }
+                            ],
+                            "name": "supermarket",
+                            "display_name": "supermarkets"
+                        }
+                    ]
+                }
             }
         ]
 
     def test_assign_combination(self):
         for sample in self.test_data:
             predicted_output = adopt_generation(sample['input'])
-
-            print("input")
-            print(sample["input"])
-
-            print("predicted_output")
-            print(predicted_output)
-
             assert predicted_output == sample['expected_output']
 
     if __name__ == '__main__':

@@ -79,9 +79,18 @@ def build_filters(node):
     if len(node_name.split(" ")) == 2:
         additional_att_tag = apply_rule(node_name)
 
-    if "features" in node:
-        node['filters'] = node.pop('features')
-        processed_filters.extend({"and": node["filters"]})
+    print(node)
+
+    if "filters" in node:
+        node_flts = []
+
+        node_flts.append(processed_filters[0])
+
+        for node_flt in node["filters"]:
+            node_flt['key'] = node_flt.pop('name')
+            node_flts.append(node_flt)
+
+        processed_filters = [{"and": node_flts}]
 
     if additional_att_tag:
         processed_filters = [{"and": [processed_filters[0], additional_att_tag]}]
