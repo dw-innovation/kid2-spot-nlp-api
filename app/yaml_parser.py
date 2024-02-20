@@ -18,7 +18,6 @@ SCHEMA = {
 
 
 def validate_and_fix_yaml(yaml_text):
-    print(yaml_text)
     try:
         result = yaml.safe_load(yaml_text)
         # validate(instance=result, schema=SCHEMA)
