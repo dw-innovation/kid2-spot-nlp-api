@@ -17,15 +17,27 @@ PLURAL_ENGINE = inflect.engine()
 
 load_dotenv()
 
-tag_attributes = pd.read_csv(os.getenv("TAG_DB"))
-tag_attributes = tag_attributes[tag_attributes["type"] == "attr"]
+# todo: move the rules to search engine, a bit messy
+osm_tags_and_attr = pd.read_csv(os.getenv("TAG_DB"))
 
-print(f"number of tag attributes {len(tag_attributes)}")
-
-ATT_TAG_MAPPING = {}
-for tag_att in tag_attributes.to_dict(orient='records'):
+TAG_ATTR = {}
+TAG_ATTR_IDS = {}
+for tag_att in osm_tags_and_attr[osm_tags_and_attr["type"] == "attr"].to_dict(orient='records'):
     for descriptor in tag_att['descriptors'].split("|"):
-        ATT_TAG_MAPPING[descriptor.lower()] = tag_att['tags']
+        TAG_ATTR[descriptor.lower()] = tag_att['tags']
+        TAG_ATTR_IDS[descriptor.lower()] = str(int(tag_att['index']))
+
+# rule 1 - cuisine
+cuisine_idx = TAG_ATTR_IDS["cuisine"]
+cuisine_group = set()
+for osm_tag in osm_tags_and_attr[osm_tags_and_attr["type"] == "core"].to_dict(orient='records'):
+    if isinstance(osm_tag['combinations'], float):
+        continue
+    combinations = set([_comb.strip() for _comb in osm_tag['combinations'].split('|')])
+    if cuisine_idx in combinations:
+        for descriptor in osm_tag['descriptors'].split("|"):
+            cuisine_group.add(descriptor.lower())
+
 
 
 def flatten(xs):
@@ -55,11 +67,13 @@ def search_osm_tag(entity):
     return r.json()
 
 
+# TODO move this methods to search engine in the future
 def apply_rule(text):
     att_tag = None
     # todo: optimize it
-    if "restaurant" in text:
-        att_tag = {'key': 'cuisine', 'operator': '=', 'value': text.split(" ")[0]}
+    splitted_text = text.split(" ")
+    if len(cuisine_group.intersection(set(splitted_text))) >0:
+        att_tag = {'key': 'cuisine', 'operator': '=', 'value': splitted_text[0]}
 
     return att_tag
 
