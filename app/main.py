@@ -1,21 +1,18 @@
+import os
+from datetime import datetime
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import torch
 from pydantic import BaseModel
 from typing import Dict
-from fastapi import FastAPI, HTTPException, Request, status
-from fastapi.middleware.cors import CORSMiddleware
-from models.spot import inference
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
-from datetime import datetime
-from pymongo import MongoClient
-import os
+
+from adopt_generation import adopt_generation
+from tf_inference import generate
+from yaml_parser import validate_and_fix_yaml
 
 app = FastAPI()
 
-client = MongoClient(os.getenv("MONGO_URI"))
-db = client[os.getenv("MONGO_DB_NAME")]
-collection = db[os.getenv("MONGO_COLLECTION_NAME")]
 model_version = os.getenv("MODEL_VERSION")
 
 origins = ["*"]
@@ -57,42 +54,51 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     response_model=Response,
     status_code=status.HTTP_200_OK,
 )
-@torch.inference_mode()
 def transform_sentence_to_imr(body: SentenceModel):
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        output = inference(body.sentence)
-        if not output:
+        raw_output = generate(body.sentence)
+        parsed_result = validate_and_fix_yaml(raw_output)
+        imr_result = adopt_generation(parsed_result)
+
+        if not imr_result:
+            error_data = {
+                "timestamp": timestamp,
+                "inputSentence": body.sentence,
+                "imr": imr_result,
+                "rawOutput": raw_output,
+                "error": str(e),
+                "status": "error",
+                "modelVersion": model_version,
+                "prompt": None
+            }
             raise HTTPException(
-                status_code=status.HTTP_204_NO_CONTENT, detail="No output generated"
+                status_code=status.HTTP_204_NO_CONTENT, detail=error_data
             )
 
         # Store data in MongoDB
         result_data = {
             "timestamp": timestamp,
             "inputSentence": body.sentence,
-            "imr": output["result"],
-            "rawOutput": output["raw"],
+            "imr": imr_result,
+            "rawOutput": raw_output,
             "status": "success",
             "modelVersion": model_version,
+            "prompt": None
         }
-        # Insert into MongoDB
-        collection.insert_one(result_data.copy())
-
-        result_data.pop("_id", None)
 
         return JSONResponse(content=result_data)
-    except Exception as e:
+    except HTTPException as e:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         error_data = {
             "timestamp": timestamp,
             "inputSentence": body.sentence if body else "N/A",
+            "rawOutput": raw_output,
             "error": str(e),
             "status": "error",
             "modelVersion": model_version,
+            "prompt": None
         }
-        collection.insert_one(error_data)
-
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_data
         )

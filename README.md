@@ -20,7 +20,7 @@ docker build -t kid2spotnlpapi:latest .
 Note: You might run into disk space issues after rebuilding the container a couple of times since each individual image is about 7GB in size. You can remove unused images by running `docker image prune -a` 
 
 ## How to Run
-Download the models and unzip them into the model folder. Run the following command:
+Download the models and unzip them into the model folder. Copy data/Tag_List.csv into the model folder. Run the following command:
 
 ```shell
 docker run -v $(pwd)/model:/app/model -p 80:8080 --env-file .env kid2spotnlpapi:latest
