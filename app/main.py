@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, Optional
 
 from adopt_generation import adopt_generation
 from tf_inference import generate
@@ -27,7 +27,13 @@ app.add_middleware(
 
 class Response(BaseModel):
     imr: Dict
+    inputSentence: str
     status: str
+    rawOutput: object
+    status: str
+    modelVersion: str
+    error: Optional[str]
+    prompt: Optional[str]
 
 
 class HTTPErrorResponse(BaseModel):

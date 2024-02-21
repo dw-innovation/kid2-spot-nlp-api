@@ -56,6 +56,7 @@ def search_osm_tag(entity):
 
 
 def apply_rule(text):
+    att_tag = None
     # todo: optimize it
     if "restaurant" in text:
         att_tag = {'key': 'cuisine', 'operator': '=', 'value': text.split(" ")[0]}
