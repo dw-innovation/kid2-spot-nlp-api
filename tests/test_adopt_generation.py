@@ -171,7 +171,7 @@ class TestAdoptFunction(unittest.TestCase):
                         }
                     ]
                 }
-            }
+            },
         ]
 
     def test_assign_combination(self):

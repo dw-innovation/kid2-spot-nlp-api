@@ -108,6 +108,18 @@ def build_filters(node):
     if additional_att_tag:
         processed_filters = [{"and": [processed_filters[0], additional_att_tag]}]
 
+    and_or_in_filters = False
+    for processed_filter in processed_filters:
+        if "and" in processed_filter:
+            and_or_in_filters=True
+            continue
+        if "or" in processed_filter:
+            and_or_in_filters = True
+            continue
+
+    if not and_or_in_filters:
+        processed_filters = [{"and": processed_filters}]
+
     return processed_filters
 
 
