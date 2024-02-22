@@ -61,28 +61,14 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     status_code=status.HTTP_200_OK,
 )
 def transform_sentence_to_imr(body: SentenceModel):
+    imr_result = None
+    raw_output = None
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         raw_output = generate(body.sentence)
         parsed_result = validate_and_fix_yaml(raw_output)
         imr_result = adopt_generation(parsed_result)
 
-        if not imr_result:
-            error_data = {
-                "timestamp": timestamp,
-                "inputSentence": body.sentence,
-                "imr": imr_result,
-                "rawOutput": raw_output,
-                "error": str(e),
-                "status": "error",
-                "modelVersion": model_version,
-                "prompt": None
-            }
-            raise HTTPException(
-                status_code=status.HTTP_204_NO_CONTENT, detail=error_data
-            )
-
-        # Store data in MongoDB
         result_data = {
             "timestamp": timestamp,
             "inputSentence": body.sentence,
@@ -98,10 +84,11 @@ def transform_sentence_to_imr(body: SentenceModel):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         error_data = {
             "timestamp": timestamp,
-            "inputSentence": body.sentence if body else "N/A",
+            "inputSentence": body.sentence,
+            "imr": imr_result,
             "rawOutput": raw_output,
-            "error": str(e),
             "status": "error",
+            "error": str(e),
             "modelVersion": model_version,
             "prompt": None
         }
