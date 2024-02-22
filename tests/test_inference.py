@@ -6,7 +6,8 @@ if __name__ == '__main__':
     # input_sentence = "Find all italian restaurants that are no more than 200 meters from a fountain in London."
     # input_sentence = "Find supermarkets whose height is larger than 10"
     # input_sentence = "find me restaurants in berlin"
-    input_sentence = "find me wind turbine in bonn"
+    # input_sentence = "find me wind turbine in bonn"
+    input_sentence="show me all shops with a name that contains the letters *\u00e5rden on Str\u00f8get in Kopenhagen"
     raw_output = generate(input_sentence)
 
     print("===raw_output===")

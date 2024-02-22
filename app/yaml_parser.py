@@ -1,4 +1,5 @@
 import yaml
+
 # from jsonschema import validate
 
 SCHEMA = {
@@ -54,10 +55,11 @@ def validate_and_fix_yaml(yaml_text):
         lines = yaml_text.split('\n')
 
         misformatted_line = lines[line_num]
-        if "value" and "id" in lines[line_num]:
+        if "*" in lines[line_num]:
+            corrected_line = misformatted_line.replace("*", "\\*")
+            yaml_text = yaml_text.replace(misformatted_line, corrected_line)
+            return validate_and_fix_yaml(yaml_text)
+        elif "value" and "id" in lines[line_num]:
             corrected_line = misformatted_line.replace("id:", "\n id:")
             yaml_text = yaml_text.replace(misformatted_line, corrected_line)
             return validate_and_fix_yaml(yaml_text)
-
-
-
