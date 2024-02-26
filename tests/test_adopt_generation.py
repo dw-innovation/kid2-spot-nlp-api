@@ -133,7 +133,8 @@ class TestAdoptFunction(unittest.TestCase):
             {
                 "input": {
                     'area': {'name': '', 'type': 'bbox'},
-                    'entities': [{'id': 0, 'name': 'kiosk'}, {'id': 1, 'name': 'supermarket', 'filters': [{'name': 'height', 'operator': '=', 'value': "10"}]}],
+                    'entities': [{'id': 0, 'name': 'kiosk'}, {'id': 1, 'name': 'supermarket', 'filters': [
+                        {'name': 'height', 'operator': '=', 'value': "10"}]}],
 
                 },
                 "expected_output": {
@@ -172,6 +173,45 @@ class TestAdoptFunction(unittest.TestCase):
                     ]
                 }
             },
+            {
+                "input": {'area': {'name': 'berlin', 'type': 'area'},
+                          'entities': [{'id': 0, 'name': 'bouldering'}, {'id': 1, 'name': 'river'}],
+                          'relations': [{'name': 'dist', 'source': 0, 'target': 1, 'value': '127.8 cm'}]},
+                "expected_output": {'area': {'type': 'area', 'value': 'berlin'}, 'nodes': [{'id': 0, 'type': 'nwr',
+                                                                                     'filters': [{'and': [
+                                                                                         {'key': 'sport',
+                                                                                          'operator': '=',
+                                                                                          'value': 'climbing'}]}],
+                                                                                     'name': 'bouldering',
+                                                                                     'display_name': 'boulderings'},
+                                                                                    {'id': 1, 'type': 'nwr',
+                                                                                     'filters': [{'or': [
+                                                                                         {'key': 'water',
+                                                                                          'operator': '=',
+                                                                                          'value': 'river'},
+                                                                                         {'key': 'water',
+                                                                                          'operator': '=',
+                                                                                          'value': 'stream'},
+                                                                                         {'key': 'water',
+                                                                                          'operator': '=',
+                                                                                          'value': 'canal'},
+                                                                                         {'key': 'waterway',
+                                                                                          'operator': '=',
+                                                                                          'value': 'river'},
+                                                                                         {'key': 'waterway',
+                                                                                          'operator': '=',
+                                                                                          'value': 'stream'},
+                                                                                         {'key': 'waterway',
+                                                                                          'operator': '=',
+                                                                                          'value': 'canal'},
+                                                                                         {'key': 'water',
+                                                                                          'operator': '=',
+                                                                                          'value': 'oxbow'}]}],
+                                                                                     'name': 'river',
+                                                                                     'display_name': 'rivers'}],
+                             'edges': [{'source': 0, 'target': 1, 'distance': '150 m', 'type': 'dist'}]}
+
+            }
         ]
 
     def test_assign_combination(self):
