@@ -69,7 +69,6 @@ def transform_sentence_to_imr(body: SentenceModel):
         parsed_result = validate_and_fix_yaml(raw_output)
         imr_result = adopt_generation(parsed_result)
     except (ModelException, ParseError, AdoptFuncError) as error:
-        print("Exception is caught!!")
         error_data = {
             "timestamp": timestamp,
             "inputSentence": body.sentence,
