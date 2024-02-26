@@ -7,9 +7,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Dict, Optional
 
-from adopt_generation import adopt_generation
-from tf_inference import generate
-from yaml_parser import validate_and_fix_yaml
+from adopt_generation import adopt_generation, AdoptFuncError
+from tf_inference import generate, ModelException
+from yaml_parser import validate_and_fix_yaml, ParseError
 
 app = FastAPI()
 
@@ -47,10 +47,10 @@ class SentenceModel(BaseModel):
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    response_model = HTTPErrorResponse(status="error", message=exc.detail)
+    response_model = HTTPErrorResponse(status="error", message=str(exc.detail))
     json_compatible_item_data = jsonable_encoder(response_model)
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code=400,
         content=json_compatible_item_data,
     )
 
@@ -63,35 +63,35 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 def transform_sentence_to_imr(body: SentenceModel):
     imr_result = None
     raw_output = None
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         raw_output = generate(body.sentence)
         parsed_result = validate_and_fix_yaml(raw_output)
         imr_result = adopt_generation(parsed_result)
-
-        result_data = {
-            "timestamp": timestamp,
-            "inputSentence": body.sentence,
-            "imr": imr_result,
-            "rawOutput": raw_output,
-            "status": "success",
-            "modelVersion": model_version,
-            "prompt": None
-        }
-
-        return JSONResponse(content=result_data)
-    except HTTPException as e:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    except (ModelException, ParseError, AdoptFuncError) as error:
+        print("Exception is caught!!")
         error_data = {
             "timestamp": timestamp,
             "inputSentence": body.sentence,
             "imr": imr_result,
             "rawOutput": raw_output,
             "status": "error",
-            "error": str(e),
+            "error": str(error),
             "modelVersion": model_version,
             "prompt": None
         }
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_data
+            status_code=status.HTTP_400_BAD_REQUEST, detail=error_data
         )
+
+    result_data = {
+        "timestamp": timestamp,
+        "inputSentence": body.sentence,
+        "imr": imr_result,
+        "rawOutput": raw_output,
+        "status": "success",
+        "modelVersion": model_version,
+        "prompt": None
+    }
+
+    return JSONResponse(content=result_data)

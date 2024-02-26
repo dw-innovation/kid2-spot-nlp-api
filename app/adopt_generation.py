@@ -39,7 +39,6 @@ for osm_tag in osm_tags_and_attr[osm_tags_and_attr["type"] == "core"].to_dict(or
             cuisine_group.add(descriptor.lower())
 
 
-
 def flatten(xs):
     for x in xs:
         if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
@@ -58,6 +57,12 @@ def is_nested_list(l):
     return True
 
 
+class AdoptFuncError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 @cache.memoize()
 def search_osm_tag(entity):
     PARAMS = {"word": entity, "limit": 1, "detail": False}
@@ -72,7 +77,7 @@ def apply_rule(text):
     att_tag = None
     # todo: optimize it
     splitted_text = text.split(" ")
-    if len(cuisine_group.intersection(set(splitted_text))) >0:
+    if len(cuisine_group.intersection(set(splitted_text))) > 0:
         att_tag = {'key': 'cuisine', 'operator': '=', 'value': splitted_text[0]}
 
     return att_tag
@@ -111,7 +116,7 @@ def build_filters(node):
     and_or_in_filters = False
     for processed_filter in processed_filters:
         if "and" in processed_filter:
-            and_or_in_filters=True
+            and_or_in_filters = True
             continue
         if "or" in processed_filter:
             and_or_in_filters = True
@@ -124,45 +129,49 @@ def build_filters(node):
 
 
 def adopt_generation(parsed_result):
-    parsed_result['area']['type'] = 'area'
-    parsed_result['area']['value'] = parsed_result['area'].pop('name')
+    try:
+        parsed_result['area']['type'] = 'area'
+        parsed_result['area']['value'] = parsed_result['area'].pop('name')
 
-    if len(parsed_result['area']['value']) == 0:
-        parsed_result['area']['value'] = 'bbox'
+        if len(parsed_result['area']['value']) == 0:
+            parsed_result['area']['value'] = 'bbox'
 
-    parsed_result['nodes'] = parsed_result.pop('entities')
+        parsed_result['nodes'] = parsed_result.pop('entities')
 
-    processed_nodes = []
-    for node in parsed_result['nodes']:
-        if 'name' not in node:
-            print(f'{node} has not the required name field!')
-            continue
-        if not PLURAL_ENGINE.singular_noun(node['name']):
-            display_name = PLURAL_ENGINE.plural_noun(node["name"])
-        else:
-            display_name = node['name']
+        processed_nodes = []
+        for node in parsed_result['nodes']:
+            if 'name' not in node:
+                print(f'{node} has not the required name field!')
+                continue
+            if not PLURAL_ENGINE.singular_noun(node['name']):
+                display_name = PLURAL_ENGINE.plural_noun(node["name"])
+            else:
+                display_name = node['name']
 
-        processed_nodes.append({
-            'id': node['id'],
-            'type': 'nwr',
-            'filters': build_filters(node),
-            'name': node['name'],
-            'display_name': display_name
+            processed_nodes.append({
+                'id': node['id'],
+                'type': 'nwr',
+                'filters': build_filters(node),
+                'name': node['name'],
+                'display_name': display_name
 
-        })
+            })
 
-    parsed_result['nodes'] = processed_nodes
+        parsed_result['nodes'] = processed_nodes
 
-    if 'relations' in parsed_result:
-        parsed_result['edges'] = parsed_result.pop('relations')
+        if 'relations' in parsed_result:
+            parsed_result['edges'] = parsed_result.pop('relations')
 
-        # TODO can we change from "distance" to "value" ???
-        processed_edges = []
-        for edge in parsed_result['edges']:
-            edge['distance'] = edge.pop('value')
-            edge['type'] = edge.pop('name')
-            processed_edges.append(edge)
+            # TODO can we change from "distance" to "value" ???
+            processed_edges = []
+            for edge in parsed_result['edges']:
+                edge['distance'] = edge.pop('value')
+                edge['type'] = edge.pop('name')
+                processed_edges.append(edge)
 
-        parsed_result['edges'] = processed_edges
+            parsed_result['edges'] = processed_edges
+
+    except (ValueError, IndexError, KeyError, TypeError) as e:
+        raise AdoptFuncError(f"Error in Adopt Generation: {e}")
 
     return parsed_result
