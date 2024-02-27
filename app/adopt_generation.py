@@ -14,7 +14,7 @@ sys.path.append(PROJECT_PATH)
 cache = Cache("tmp")
 SEARCH_ENDPOINT = os.getenv("SEARCH_ENDPOINT")
 PLURAL_ENGINE = inflect.engine()
-DEFAULT_DISTANCE="10 m"
+DEFAULT_DISTANCE=os.getenv("DEFAULT_DISTANCE")
 
 load_dotenv()
 
