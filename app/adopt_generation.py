@@ -14,6 +14,7 @@ sys.path.append(PROJECT_PATH)
 cache = Cache("tmp")
 SEARCH_ENDPOINT = os.getenv("SEARCH_ENDPOINT")
 PLURAL_ENGINE = inflect.engine()
+DEFAULT_DISTANCE="10 m"
 
 load_dotenv()
 
@@ -168,10 +169,10 @@ def adopt_generation(parsed_result):
                 edge['distance'] = edge.pop('value')
                 if 'mm' in edge['distance']:
                     edge['distance'] = edge['distance'].replace('mm', '')
-                    edge['distance'] = '150 m'
+                    edge['distance'] = DEFAULT_DISTANCE
                 elif 'cm' in edge['distance']:
                     edge['distance'] = edge['distance'].replace('cm', '')
-                    edge['distance'] = '150 m'
+                    edge['distance'] = DEFAULT_DISTANCE
                 edge['type'] = edge.pop('name')
                 processed_edges.append(edge)
 
