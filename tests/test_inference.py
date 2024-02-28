@@ -12,6 +12,7 @@ if __name__ == '__main__':
     input_sentence = "find all bouldering gyms close to a river in berlin"
     input_sentence = "Find me a KFC 10m away from a pizza hut 10m away from a restaurant called al sultan in Augsburg."
     input_sentence = "Find me all bus stops 100m away from a highway bridge in Bonn"
+    input_sentence = "Find a park in Perugia with a viewpoint and a drinking fountain."
     raw_output = generate(input_sentence)
 
     print("===raw_output===")

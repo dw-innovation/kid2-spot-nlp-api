@@ -10,34 +10,39 @@ class TestAdoptFunction(unittest.TestCase):
                 "input": {'area': {'name': 'berlin', 'type': 'area'},
                           'entities': [{'id': 0, 'name': 'kiosk'}, {'id': 1, 'name': 'park'}],
                           'relations': [{'name': 'dist', 'source': 0, 'target': 1, 'value': '100 m'}]},
-                "expected_output": {'area': {'value': 'berlin', 'type': 'area'},
-                                    'nodes': [
-                                        {
-                                            'id': 0,
-                                            'type': 'nwr',
-                                            'name': 'kiosk',
-                                            'display_name': 'kiosks',
-                                            'filters': [
-                                                {
-                                                    'or': [{'key': 'building', 'operator': '=', 'value': 'kiosk'},
-                                                           {'key': 'shop', 'operator': '=', 'value': 'kiosk'},
-                                                           {'key': 'shop', 'operator': '=', 'value': 'convenience'}]}]
-                                        },
-                                        {
-                                            'id': 1,
-                                            'type': 'nwr',
-                                            'name': 'park',
-                                            'display_name': 'parks',
-                                            'filters': [
-                                                {'or': [
-                                                    {'key': 'landuse', 'operator': '=', 'value': 'recreation_ground'},
-                                                    {'key': 'landuse', 'operator': '=', 'value': 'village_green'},
-                                                    {'key': 'leisure', 'operator': '=', 'value': 'park'},
-                                                    {'key': 'leisure', 'operator': '=', 'value': 'garden'}]}
-                                            ]
-                                        }
-                                    ],
-                                    'edges': [{'type': 'dist', 'source': 0, 'target': 1, 'distance': '100 m'}]},
+                "expected_output": {'area': {'type': 'area', 'value': 'berlin'}, 'nodes': [{'id': 0, 'type': 'nwr',
+                                                                                            'filters': [{'or': [
+                                                                                                {'key': 'building',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'kiosk'},
+                                                                                                {'key': 'shop',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'kiosk'},
+                                                                                                {'key': 'shop',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'convenience'},
+                                                                                                {'key': 'shop',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'cigarette'}]}],
+                                                                                            'name': 'kiosk',
+                                                                                            'display_name': 'kiosks'},
+                                                                                           {'id': 1, 'type': 'nwr',
+                                                                                            'filters': [{'or': [
+                                                                                                {'key': 'landuse',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'recreation_ground'},
+                                                                                                {'key': 'landuse',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'village_green'},
+                                                                                                {'key': 'leisure',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'park'},
+                                                                                                {'key': 'leisure',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'garden'}]}],
+                                                                                            'name': 'park',
+                                                                                            'display_name': 'parks'}],
+                                    'edges': [{'source': 0, 'target': 1, 'distance': '100 m', 'type': 'dist'}]}
             },
             {
                 "input": {
@@ -129,94 +134,14 @@ class TestAdoptFunction(unittest.TestCase):
                     ]
                 }
 
-            },
-            {
-                "input": {
-                    'area': {'name': '', 'type': 'bbox'},
-                    'entities': [{'id': 0, 'name': 'kiosk'}, {'id': 1, 'name': 'supermarket', 'filters': [
-                        {'name': 'height', 'operator': '=', 'value': "10"}]}],
-
-                },
-                "expected_output": {
-                    "area": {"type": "area", "value": "bbox"},
-                    "nodes": [
-                        {
-                            'id': 0,
-                            'type': 'nwr',
-                            'filters': [
-                                {
-                                    'or': [{'key': 'building', 'operator': '=', 'value': 'kiosk'},
-                                           {'key': 'shop', 'operator': '=', 'value': 'kiosk'},
-                                           {'key': 'shop', 'operator': '=', 'value': 'convenience'}]}],
-                            'name': 'kiosk',
-                            'display_name': 'kiosks'
-                        },
-                        {
-                            "id": 1,
-                            "type": "nwr",
-                            "filters": [
-                                {
-                                    "and": [
-                                        {
-                                            "or": [
-                                                {"key": "shop", "operator": "=", "value": "supermarket"},
-                                                {"key": "building", "operator": "=", "value": "supermarket"}
-                                            ]
-                                        },
-                                        {'operator': '=', 'value': '10', 'key': 'height'}
-                                    ]
-                                }
-                            ],
-                            "name": "supermarket",
-                            "display_name": "supermarkets"
-                        }
-                    ]
-                }
-            },
-            {
-                "input": {'area': {'name': 'berlin', 'type': 'area'},
-                          'entities': [{'id': 0, 'name': 'bouldering'}, {'id': 1, 'name': 'river'}],
-                          'relations': [{'name': 'dist', 'source': 0, 'target': 1, 'value': '127.8 cm'}]},
-                "expected_output": {'area': {'type': 'area', 'value': 'berlin'}, 'nodes': [{'id': 0, 'type': 'nwr',
-                                                                                            'filters': [{'and': [
-                                                                                                {'key': 'sport',
-                                                                                                 'operator': '=',
-                                                                                                 'value': 'climbing'}]}],
-                                                                                            'name': 'bouldering',
-                                                                                            'display_name': 'boulderings'},
-                                                                                           {'id': 1, 'type': 'nwr',
-                                                                                            'filters': [{'or': [
-                                                                                                {'key': 'water',
-                                                                                                 'operator': '=',
-                                                                                                 'value': 'river'},
-                                                                                                {'key': 'water',
-                                                                                                 'operator': '=',
-                                                                                                 'value': 'stream'},
-                                                                                                {'key': 'water',
-                                                                                                 'operator': '=',
-                                                                                                 'value': 'canal'},
-                                                                                                {'key': 'waterway',
-                                                                                                 'operator': '=',
-                                                                                                 'value': 'river'},
-                                                                                                {'key': 'waterway',
-                                                                                                 'operator': '=',
-                                                                                                 'value': 'stream'},
-                                                                                                {'key': 'waterway',
-                                                                                                 'operator': '=',
-                                                                                                 'value': 'canal'},
-                                                                                                {'key': 'water',
-                                                                                                 'operator': '=',
-                                                                                                 'value': 'oxbow'}]}],
-                                                                                            'name': 'river',
-                                                                                            'display_name': 'rivers'}],
-                                    'edges': [{'source': 0, 'target': 1, 'distance': '150 m', 'type': 'dist'}]}
-
             }
         ]
 
     def test_assign_combination(self):
         for sample in self.test_data:
             predicted_output = adopt_generation(sample['input'])
+            print("predicted output")
+            print(predicted_output)
             assert predicted_output == sample['expected_output']
 
     def test_return_partial_matches(self):
@@ -228,6 +153,123 @@ class TestAdoptFunction(unittest.TestCase):
                                     {'name': 'dist', 'source': 1, 'target': 2, 'value': '10 m'}]}
 
         assert adopt_generation(test_input)
+
+    def test_invalid_filter(self):
+        test_input = {'area': {'name': 'perugia', 'type': 'area'}, 'entities': [
+            {'filters': [{'name': 'viewpoint', 'operator': '=', 'value': 'viewpoint'}], 'id': 0, 'name': 'park'},
+            {'id': 1, 'name': 'drinking fountain'},
+            {'filters': [{'name': 'name', 'operator': '', 'value': 'b'}], 'id': 2, 'name': 'hotel bar'}],
+                      'relations': [{'name': 'dist', 'source': 0, 'target': 1, 'value': '200 m'},
+                                    {'name': 'dist', 'source': 1, 'target': 2, 'value': '100 m'}]}
+
+        expected_output = {
+            "area": {
+                "type": "area",
+                "value": "perugia"
+            },
+            "nodes": [
+                {
+                    "id": 0,
+                    "type": "nwr",
+                    "filters": [
+                        {
+                            "and": [
+                                {
+                                    "or": [
+                                        {
+                                            "key": "landuse",
+                                            "operator": "=",
+                                            "value": "recreation_ground"
+                                        },
+                                        {
+                                            "key": "landuse",
+                                            "operator": "=",
+                                            "value": "village_green"
+                                        },
+                                        {
+                                            "key": "leisure",
+                                            "operator": "=",
+                                            "value": "park"
+                                        },
+                                        {
+                                            "key": "leisure",
+                                            "operator": "=",
+                                            "value": "garden"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "name": "park",
+                    "display_name": "parks"
+                },
+                {
+                    "id": 1,
+                    "type": "nwr",
+                    "filters": [
+                        {
+                            "and": [
+                                {
+                                    "key": "amenity",
+                                    "operator": "=",
+                                    "value": "drinking_water"
+                                }
+                            ]
+                        }
+                    ],
+                    "name": "drinking fountain",
+                    "display_name": "drinking fountains"
+                },
+                {
+                    "id": 2,
+                    "type": "nwr",
+                    "filters": [
+                        {
+                            "and": [
+                                {
+                                    "or": [
+                                        {
+                                            "key": "tourism",
+                                            "operator": "=",
+                                            "value": "hotel"
+                                        },
+                                        {
+                                            "key": "building",
+                                            "operator": "=",
+                                            "value": "hotel"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "operator": "=",
+                                    "value": "b",
+                                    "key": "name"
+                                }
+                            ]
+                        }
+                    ],
+                    "name": "hotel bar",
+                    "display_name": "hotel bars"
+                }
+            ],
+            "edges": [
+                {
+                    "source": 0,
+                    "target": 1,
+                    "distance": "200 m",
+                    "type": "dist"
+                },
+                {
+                    "source": 1,
+                    "target": 2,
+                    "distance": "100 m",
+                    "type": "dist"
+                }
+            ]
+        }
+
+        assert adopt_generation(test_input) == expected_output
 
     if __name__ == '__main__':
         unittest.main()

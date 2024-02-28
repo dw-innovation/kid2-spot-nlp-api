@@ -108,7 +108,11 @@ def build_filters(node):
         node_flts.append(processed_filters[0])
 
         for node_flt in node["filters"]:
+            if node_flt["name"] not in TAG_ATTR_IDS.keys():
+                continue
             node_flt['key'] = node_flt.pop('name')
+            if len(node_flt['operator']) ==0:
+                node_flt['operator'] = '='
             node_flts.append(node_flt)
 
         processed_filters = [{"and": node_flts}]
