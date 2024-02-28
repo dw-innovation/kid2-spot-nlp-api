@@ -178,38 +178,38 @@ class TestAdoptFunction(unittest.TestCase):
                           'entities': [{'id': 0, 'name': 'bouldering'}, {'id': 1, 'name': 'river'}],
                           'relations': [{'name': 'dist', 'source': 0, 'target': 1, 'value': '127.8 cm'}]},
                 "expected_output": {'area': {'type': 'area', 'value': 'berlin'}, 'nodes': [{'id': 0, 'type': 'nwr',
-                                                                                     'filters': [{'and': [
-                                                                                         {'key': 'sport',
-                                                                                          'operator': '=',
-                                                                                          'value': 'climbing'}]}],
-                                                                                     'name': 'bouldering',
-                                                                                     'display_name': 'boulderings'},
-                                                                                    {'id': 1, 'type': 'nwr',
-                                                                                     'filters': [{'or': [
-                                                                                         {'key': 'water',
-                                                                                          'operator': '=',
-                                                                                          'value': 'river'},
-                                                                                         {'key': 'water',
-                                                                                          'operator': '=',
-                                                                                          'value': 'stream'},
-                                                                                         {'key': 'water',
-                                                                                          'operator': '=',
-                                                                                          'value': 'canal'},
-                                                                                         {'key': 'waterway',
-                                                                                          'operator': '=',
-                                                                                          'value': 'river'},
-                                                                                         {'key': 'waterway',
-                                                                                          'operator': '=',
-                                                                                          'value': 'stream'},
-                                                                                         {'key': 'waterway',
-                                                                                          'operator': '=',
-                                                                                          'value': 'canal'},
-                                                                                         {'key': 'water',
-                                                                                          'operator': '=',
-                                                                                          'value': 'oxbow'}]}],
-                                                                                     'name': 'river',
-                                                                                     'display_name': 'rivers'}],
-                             'edges': [{'source': 0, 'target': 1, 'distance': '150 m', 'type': 'dist'}]}
+                                                                                            'filters': [{'and': [
+                                                                                                {'key': 'sport',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'climbing'}]}],
+                                                                                            'name': 'bouldering',
+                                                                                            'display_name': 'boulderings'},
+                                                                                           {'id': 1, 'type': 'nwr',
+                                                                                            'filters': [{'or': [
+                                                                                                {'key': 'water',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'river'},
+                                                                                                {'key': 'water',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'stream'},
+                                                                                                {'key': 'water',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'canal'},
+                                                                                                {'key': 'waterway',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'river'},
+                                                                                                {'key': 'waterway',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'stream'},
+                                                                                                {'key': 'waterway',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'canal'},
+                                                                                                {'key': 'water',
+                                                                                                 'operator': '=',
+                                                                                                 'value': 'oxbow'}]}],
+                                                                                            'name': 'river',
+                                                                                            'display_name': 'rivers'}],
+                                    'edges': [{'source': 0, 'target': 1, 'distance': '150 m', 'type': 'dist'}]}
 
             }
         ]
@@ -218,6 +218,16 @@ class TestAdoptFunction(unittest.TestCase):
         for sample in self.test_data:
             predicted_output = adopt_generation(sample['input'])
             assert predicted_output == sample['expected_output']
+
+    def test_return_partial_matches(self):
+        test_input = {'area': {'name': 'augsburg', 'type': 'area'},
+                      'entities': [{'id': 0, 'name': 'kfc'}, {'id': 1, 'name': 'pizza hut'},
+                                   {'filters': [{'name': 'name', 'operator': '=', 'value': 'al sultan'}], 'id': 2,
+                                    'name': 'restaurant'}],
+                      'relations': [{'name': 'dist', 'source': 0, 'target': 1, 'value': '10 m'},
+                                    {'name': 'dist', 'source': 1, 'target': 2, 'value': '10 m'}]}
+
+        assert adopt_generation(test_input)
 
     if __name__ == '__main__':
         unittest.main()

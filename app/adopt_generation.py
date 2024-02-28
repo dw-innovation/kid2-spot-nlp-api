@@ -14,7 +14,7 @@ sys.path.append(PROJECT_PATH)
 cache = Cache("tmp")
 SEARCH_ENDPOINT = os.getenv("SEARCH_ENDPOINT")
 PLURAL_ENGINE = inflect.engine()
-DEFAULT_DISTANCE=os.getenv("DEFAULT_DISTANCE")
+DEFAULT_DISTANCE = os.getenv("DEFAULT_DISTANCE")
 
 load_dotenv()
 
@@ -87,6 +87,8 @@ def apply_rule(text):
 def build_filters(node):
     node_name = node["name"]
     osm_results = search_osm_tag(node["name"])
+    if len(osm_results) == 0:
+        return None
     ent_filters = osm_results[0]["imr"]
     additional_att_tag = None
 
@@ -133,7 +135,6 @@ def adopt_generation(parsed_result):
     try:
         parsed_result['area']['type'] = 'area'
         parsed_result['area']['value'] = parsed_result['area'].pop('name')
-
         if len(parsed_result['area']['value']) == 0:
             parsed_result['area']['value'] = 'bbox'
 
@@ -149,14 +150,17 @@ def adopt_generation(parsed_result):
             else:
                 display_name = node['name']
 
-            processed_nodes.append({
-                'id': node['id'],
-                'type': 'nwr',
-                'filters': build_filters(node),
-                'name': node['name'],
-                'display_name': display_name
+            node_filters = build_filters(node)
 
-            })
+            if node_filters:
+                processed_nodes.append({
+                    'id': node['id'],
+                    'type': 'nwr',
+                    'filters': node_filters,
+                    'name': node['name'],
+                    'display_name': display_name
+
+                })
 
         parsed_result['nodes'] = processed_nodes
 

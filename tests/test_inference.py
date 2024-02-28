@@ -10,6 +10,8 @@ if __name__ == '__main__':
     # input_sentence="show me all shops with a name that contains the letters *\u00e5rden on Str\u00f8get in Kopenhagen"
     input_sentence = "find all malls with name zara in bonn"
     input_sentence = "find all bouldering gyms close to a river in berlin"
+    input_sentence = "Find me a KFC 10m away from a pizza hut 10m away from a restaurant called al sultan in Augsburg."
+    input_sentence = "Find me all bus stops 100m away from a highway bridge in Bonn"
     raw_output = generate(input_sentence)
 
     print("===raw_output===")
