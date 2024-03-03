@@ -44,6 +44,12 @@ pipeline = Text2TextGenerationPipeline(model=transformer_model, batch_size=16,
 plural_converter = inflect.engine()
 
 
+class ModelException(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 # Cache and fetch OpenStreetMap tags
 @cache.memoize()
 def search_osm_tag(entity):
@@ -67,10 +73,14 @@ def decode_unicode(text):
 # Main inference function
 def generate(sentence: str) -> str:
     raw_result = None
+    if len(sentence) ==0:
+        raise ModelException("Input must not be empty.")
     sentence = sentence.lower()
     with torch.inference_mode():
         raw_result = pipeline([sentence], do_sample=False, max_length=MAX_LENGTH, pad_token_id=tokenizer.pad_token_id)
         raw_result = raw_result[0]["generated_text"]
+    if len(raw_result) ==0:
+        raise ModelException("Model does not generate a text.")
     return raw_result
 
 
