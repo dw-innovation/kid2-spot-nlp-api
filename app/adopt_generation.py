@@ -14,18 +14,30 @@ sys.path.append(PROJECT_PATH)
 cache = Cache("tmp")
 SEARCH_ENDPOINT = os.getenv("SEARCH_ENDPOINT")
 PLURAL_ENGINE = inflect.engine()
+DEFAULT_DISTANCE = os.getenv("DEFAULT_DISTANCE")
 
 load_dotenv()
 
-tag_attributes = pd.read_csv(os.getenv("TAG_DB"))
-tag_attributes = tag_attributes[tag_attributes["type"] == "attr"]
+# todo: move the rules to search engine, a bit messy
+osm_tags_and_attr = pd.read_csv(os.getenv("TAG_DB"))
 
-print(f"number of tag attributes {len(tag_attributes)}")
-
-ATT_TAG_MAPPING = {}
-for tag_att in tag_attributes.to_dict(orient='records'):
+TAG_ATTR = {}
+TAG_ATTR_IDS = {}
+for tag_att in osm_tags_and_attr[osm_tags_and_attr["type"] == "attr"].to_dict(orient='records'):
     for descriptor in tag_att['descriptors'].split("|"):
-        ATT_TAG_MAPPING[descriptor.lower()] = tag_att['tags']
+        TAG_ATTR[descriptor.lower()] = tag_att['tags']
+        TAG_ATTR_IDS[descriptor.lower()] = str(int(tag_att['index']))
+
+# rule 1 - cuisine
+cuisine_idx = TAG_ATTR_IDS["cuisine"]
+cuisine_group = set()
+for osm_tag in osm_tags_and_attr[osm_tags_and_attr["type"] == "core"].to_dict(orient='records'):
+    if isinstance(osm_tag['combinations'], float):
+        continue
+    combinations = set([_comb.strip() for _comb in osm_tag['combinations'].split('|')])
+    if cuisine_idx in combinations:
+        for descriptor in osm_tag['descriptors'].split("|"):
+            cuisine_group.add(descriptor.lower())
 
 
 def flatten(xs):
@@ -46,20 +58,32 @@ def is_nested_list(l):
     return True
 
 
+class AdoptFuncError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 @cache.memoize()
 def search_osm_tag(entity):
+    print(entity)
     PARAMS = {"word": entity, "limit": 1, "detail": False}
     r = requests.get(
         url=SEARCH_ENDPOINT, params=PARAMS, verify=False
     )  # set verify to False to ignore SSL certificate
+
+    print(r.status_code)
+
     return r.json()
 
 
+# TODO move this methods to search engine in the future
 def apply_rule(text):
     att_tag = None
     # todo: optimize it
-    if "restaurant" in text:
-        att_tag = {'key': 'cuisine', 'operator': '=', 'value': text.split(" ")[0]}
+    splitted_text = text.split(" ")
+    if len(cuisine_group.intersection(set(splitted_text))) > 0:
+        att_tag = {'key': 'cuisine', 'operator': '=', 'value': splitted_text[0]}
 
     return att_tag
 
@@ -67,6 +91,8 @@ def apply_rule(text):
 def build_filters(node):
     node_name = node["name"]
     osm_results = search_osm_tag(node["name"])
+    if len(osm_results) == 0:
+        return None
     ent_filters = osm_results[0]["imr"]
     additional_att_tag = None
 
@@ -80,63 +106,103 @@ def build_filters(node):
     if len(node_name.split(" ")) == 2:
         additional_att_tag = apply_rule(node_name)
 
-    if "filters" in node:
+        print(additional_att_tag)
+
+    if "properties" in node:
         node_flts = []
 
         node_flts.append(processed_filters[0])
 
-        for node_flt in node["filters"]:
-            node_flt['key'] = node_flt.pop('name')
-            node_flts.append(node_flt)
+        for node_flt in node["properties"]:
+            ent_property = node_flt["name"]
+            ent_property_imr = search_osm_tag(ent_property)
+            ent_property_imr = ent_property_imr[0]['imr'][0]['or']
+
+            new_ent_operator = node_flt["operator"]
+
+            if len(new_ent_operator) == 0:
+                new_ent_operator = '='
+
+            new_ent_value = node_flt["value"]
+
+            if len(ent_property_imr) == 1:
+                ent_property_imr = ent_property_imr[0]
+                ent_property_imr["operator"] = new_ent_operator
+                ent_property_imr["value"] = new_ent_value
+            node_flts.append(ent_property_imr)
 
         processed_filters = [{"and": node_flts}]
 
     if additional_att_tag:
         processed_filters = [{"and": [processed_filters[0], additional_att_tag]}]
 
+    and_or_in_filters = False
+    for processed_filter in processed_filters:
+        if "and" in processed_filter:
+            and_or_in_filters = True
+            continue
+        if "or" in processed_filter:
+            and_or_in_filters = True
+            continue
+
+    if not and_or_in_filters:
+        processed_filters = [{"and": processed_filters}]
+
     return processed_filters
 
 
 def adopt_generation(parsed_result):
-    parsed_result['area']['type'] = 'area'
-    parsed_result['area']['value'] = parsed_result['area'].pop('name')
+    try:
+        parsed_result['area']['type'] = 'area'
+        if len(parsed_result['area']['value']) == 0:
+            parsed_result['area']['value'] = 'bbox'
 
-    if len(parsed_result['area']['value']) == 0:
-        parsed_result['area']['value'] = 'bbox'
+        parsed_result['nodes'] = parsed_result.pop('entities')
 
-    parsed_result['nodes'] = parsed_result.pop('entities')
+        processed_nodes = []
+        for node in parsed_result['nodes']:
+            if 'name' not in node:
+                print(f'{node} has not the required name field!')
+                continue
+            if not PLURAL_ENGINE.singular_noun(node['name']):
+                display_name = PLURAL_ENGINE.plural_noun(node["name"])
+            else:
+                display_name = node['name']
 
-    processed_nodes = []
-    for node in parsed_result['nodes']:
-        if 'name' not in node:
-            print(f'{node} has not the required name field!')
-            continue
-        if not PLURAL_ENGINE.singular_noun(node['name']):
-            display_name = PLURAL_ENGINE.plural_noun(node["name"])
-        else:
-            display_name = node['name']
+            node_filters = build_filters(node)
 
-        processed_nodes.append({
-            'id': node['id'],
-            'type': 'nwr',
-            'filters': build_filters(node),
-            'name': node['name'],
-            'display_name': display_name
+            if node_filters:
+                processed_nodes.append({
+                    'id': node['id'],
+                    'type': 'nwr',
+                    'filters': node_filters,
+                    'name': node['name'],
+                    'display_name': display_name
 
-        })
+                })
 
-    parsed_result['nodes'] = processed_nodes
+        parsed_result['nodes'] = processed_nodes
 
-    if 'relations' in parsed_result:
-        parsed_result['edges'] = parsed_result.pop('relations')
+        if 'relations' in parsed_result:
+            parsed_result['edges'] = parsed_result.pop('relations')
 
-        # TODO can we change from "distance" to "value" ???
-        processed_edges = []
-        for edge in parsed_result['edges']:
-            edge['distance'] = edge.pop('value')
-            edge['type'] = edge.pop('name')
-            processed_edges.append(edge)
+            # TODO can we change from "distance" to "value" ???
+            processed_edges = []
+            for edge in parsed_result['edges']:
+                edge['distance'] = edge.pop('value')
+                if 'mm' in edge['distance']:
+                    edge['distance'] = edge['distance'].replace('mm', '')
+                    edge['distance'] = DEFAULT_DISTANCE
+                elif 'cm' in edge['distance']:
+                    edge['distance'] = edge['distance'].replace('cm', '')
+                    edge['distance'] = DEFAULT_DISTANCE
+                processed_edges.append(edge)
 
-        parsed_result['edges'] = processed_edges
+            parsed_result['edges'] = processed_edges
+
+    except (ValueError, IndexError, KeyError, TypeError) as e:
+        raise AdoptFuncError(f"Error in Adopt Generation: {e}")
+
+    print(parsed_result)
 
     return parsed_result
