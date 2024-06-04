@@ -190,12 +190,12 @@ def adopt_generation(parsed_result):
             processed_edges = []
             for edge in parsed_result['edges']:
                 edge['distance'] = edge.pop('value')
-                if 'mm' in edge['distance']:
-                    edge['distance'] = edge['distance'].replace('mm', '')
-                    edge['distance'] = DEFAULT_DISTANCE
-                elif 'cm' in edge['distance']:
-                    edge['distance'] = edge['distance'].replace('cm', '')
-                    edge['distance'] = DEFAULT_DISTANCE
+                # if 'mm' in edge['distance']:
+                #     edge['distance'] = edge['distance'].replace('mm', '')
+                #     edge['distance'] = DEFAULT_DISTANCE
+                # elif 'cm' in edge['distance']:
+                #     edge['distance'] = edge['distance'].replace('cm', '')
+                #     edge['distance'] = DEFAULT_DISTANCE
                 processed_edges.append(edge)
 
             parsed_result['edges'] = processed_edges
