@@ -4,11 +4,12 @@ from app.adopt_generation import adopt_generation
 
 if __name__ == '__main__':
     input_sentences = [
-        "Find all italian restaurants that are no more than 200 meters from a fountain in London.",
-        "Find supermarkets whose height is larger than 10 and with a red roof",
-        "find me restaurants in berlin",
-        "find me wind turbine in bonn",
-        "find all kiosks within a park"
+        # "Find all italian restaurants that are no more than 200 meters from a fountain in London.",
+        # "Find supermarkets whose height is larger than 10 and with a red roof",
+        # "find me restaurants in berlin",
+        # "find me wind turbine in bonn",
+        # "find all kiosks within a park",
+        "find all bars"
     ]
 
     for idx, input_sentence in enumerate(input_sentences):
