@@ -66,14 +66,10 @@ class AdoptFuncError(Exception):
 
 @cache.memoize()
 def search_osm_tag(entity):
-    print(entity)
     PARAMS = {"word": entity, "limit": 1, "detail": False}
     r = requests.get(
         url=SEARCH_ENDPOINT, params=PARAMS, verify=False
     )  # set verify to False to ignore SSL certificate
-
-    print(r.status_code)
-
     return r.json()
 
 
@@ -105,9 +101,6 @@ def build_filters(node):
 
     if len(node_name.split(" ")) == 2:
         additional_att_tag = apply_rule(node_name)
-
-        print(additional_att_tag)
-
     if "properties" in node:
         node_flts = []
 
@@ -124,13 +117,19 @@ def build_filters(node):
                 new_ent_operator = '='
 
             new_ent_value = node_flt["value"]
-
             if len(ent_property_imr) == 1:
                 ent_property_imr = ent_property_imr[0]
                 ent_property_imr["operator"] = new_ent_operator
                 ent_property_imr["value"] = new_ent_value
-            node_flts.append(ent_property_imr)
+            elif any(_ent_prop['key'] in ['brand', 'name'] for _ent_prop in ent_property_imr):
+                new_ent_property_imr = []
+                for item in ent_property_imr:
+                    item['operator'] = new_ent_operator
+                    item['value'] = new_ent_value
+                    new_ent_property_imr.append(item)
+                ent_property_imr = new_ent_property_imr
 
+            node_flts.append(ent_property_imr)
         processed_filters = [{"and": node_flts}]
 
     if additional_att_tag:
@@ -188,7 +187,4 @@ def adopt_generation(parsed_result):
 
     except (ValueError, IndexError, KeyError, TypeError) as e:
         raise AdoptFuncError(f"Error in Adopt Generation: {e}")
-
-    print(parsed_result)
-
     return parsed_result

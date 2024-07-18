@@ -9,7 +9,8 @@ if __name__ == '__main__':
         # "find me restaurants in berlin",
         # "find me wind turbine in bonn",
         # "find all kiosks within a park",
-        "find all bars"
+        # "find all bars",
+        "Find all book stores of brand thalia"
     ]
 
     for idx, input_sentence in enumerate(input_sentences):
