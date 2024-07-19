@@ -79,17 +79,24 @@ class TestAdoptFunction(unittest.TestCase):
                             'key': 'shop',
                             'operator': '=',
                             'value': 'books'}]},
-                [
-                    {
-                        'key': 'name',
-                        'operator': '~',
-                        'value': 'thalia'},
-                    {
-                        'key': 'brand',
-                        'operator': '~',
-                        'value': 'thalia'}]]}],
+                {
+                    'or':
+                        [
+                            {
+                                'key': 'name',
+                                'operator': '~',
+                                'value': 'thalia'},
+                            {
+                                'key': 'brand',
+                                'operator': '~',
+                                'value': 'thalia'}]
+
+                }
+            ]}],
                                                                                  'name': 'book store',
                                                                                  'display_name': 'book stores'}]}
+
+
         self.assertEqual(adopt_generation(test_parsed_result), expected_result)
 
     if __name__ == '__main__':

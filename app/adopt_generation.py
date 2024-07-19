@@ -127,6 +127,8 @@ def build_filters(node):
                     item['operator'] = new_ent_operator
                     item['value'] = new_ent_value
                     new_ent_property_imr.append(item)
+
+                new_ent_property_imr = {"or": new_ent_property_imr}
                 ent_property_imr = new_ent_property_imr
 
             node_flts.append(ent_property_imr)
