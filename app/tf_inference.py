@@ -28,10 +28,6 @@ if CUDA_DEVICE:
 else:
     device = torch.device("cpu")
 
-# Initialize disk cache and get search endpoint
-cache = Cache("tmp")
-SEARCH_ENDPOINT = os.getenv("SEARCH_ENDPOINT")
-
 transformer_model = PeftModel.from_pretrained(transformer_model, peft_model_id)
 transformer_model = transformer_model.merge_and_unload()
 transformer_model.eval()
@@ -41,33 +37,10 @@ pipeline = Text2TextGenerationPipeline(model=transformer_model, batch_size=16,
                                        device=device,  # model.device,
                                        clean_up_tokenization_spaces=True)
 
-plural_converter = inflect.engine()
-
-
 class ModelException(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(self.message)
-
-
-# Cache and fetch OpenStreetMap tags
-@cache.memoize()
-def search_osm_tag(entity):
-    PARAMS = {"word": entity, "limit": 5, "detail": False}
-    r = requests.get(
-        url=SEARCH_ENDPOINT, params=PARAMS, verify=False
-    )  # set verify to False to ignore SSL certificate
-    return r.json()
-
-
-def decode_unicode(text):
-    def unicode_replacer(match):
-        return codecs.decode(match.group(0), 'unicode_escape')
-
-    pattern = re.compile(r'\\u[0-9a-fA-F]{4}')
-    decoded_text = pattern.sub(unicode_replacer, text)
-    decoded_text = decoded_text.replace('\\', '')
-    return decoded_text
 
 
 # Main inference function
