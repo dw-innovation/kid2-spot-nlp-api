@@ -23,7 +23,7 @@ Note: You might run into disk space issues after rebuilding the container a coup
 Download the models and unzip them into the model folder. Copy data/Tag_List.csv into the model folder. Run the following command:
 
 ```shell
-docker run -v $(pwd)/model:/app/model -p 80:8080 --env-file .env kid2spotnlpapi:latest
+docker run -v $(pwd)/model:/app/model -p 80:8080 --env-file .env -e http_proxy="" kid2spotnlpapi:latest 
 ```
 
 ## API Endpoints
