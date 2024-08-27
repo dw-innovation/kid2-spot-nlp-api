@@ -7,9 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Dict, Optional
 
-from adopt_generation import adopt_generation
 from tf_inference import generate
-from yaml_parser import validate_and_fix_yaml
 
 app = FastAPI()
 
@@ -64,45 +62,11 @@ def transform_sentence_to_imr(body: SentenceModel):
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         raw_output = generate(body.sentence)
-        parsed_result = validate_and_fix_yaml(raw_output)
-
-        if not parsed_result:
-            error_data = {
-                "timestamp": timestamp,
-                "inputSentence": body.sentence,
-                "imr": None,
-                "rawOutput": raw_output,
-                "error": str(e),
-                "status": "error",
-                "modelVersion": model_version,
-                "prompt": None
-            }
-            raise HTTPException(
-                status_code=status.HTTP_204_NO_CONTENT, detail=error_data
-            )
-
-        imr_result = adopt_generation(parsed_result)
-
-        if not imr_result:
-            error_data = {
-                "timestamp": timestamp,
-                "inputSentence": body.sentence,
-                "imr": imr_result,
-                "rawOutput": raw_output,
-                "error": str(e),
-                "status": "error",
-                "modelVersion": model_version,
-                "prompt": None
-            }
-            raise HTTPException(
-                status_code=status.HTTP_204_NO_CONTENT, detail=error_data
-            )
 
         # Store data in MongoDB
         result_data = {
             "timestamp": timestamp,
             "inputSentence": body.sentence,
-            "imr": imr_result,
             "rawOutput": raw_output,
             "status": "success",
             "modelVersion": model_version,
